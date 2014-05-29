@@ -6,17 +6,17 @@
         PATH_RE = /[^?#]*\//,
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         doc = document,
-        nop = new Function,
+        empty = new Function,
         bootPath = get_script_path(),
         head = doc.head,
         global = this;
-    function hop(obj, key) {
+    function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
     }
 
     function for_in(o, fn) {
         for (var k in o)
-            if (hop(o, k)) {
+            if (has(o, k)) {
                 if (fn(o[k], k) === false)
                     return false;
             }
@@ -243,7 +243,7 @@
         } else {
             mod = this.getMod(this.numUnknowns++);
             mod.onLoadDef(def);
-            this.loadMod(mod, nop)
+            this.loadMod(mod, empty)
         }
     }
 
@@ -251,7 +251,7 @@
         this.suspended = false;
         if (this.queues.length) {
             var task = this.queues.shift();
-            this.loadDef(task, nop)
+            this.loadDef(task, empty)
         }
     };
 
@@ -269,7 +269,7 @@
                 if (mod.val !== EMPTY) {
                     return mod.val
                 }
-                loader.loadMod(mod, nop)
+                loader.loadMod(mod, empty)
             }
         } else {
             throw ""
