@@ -1,3 +1,6 @@
+/**
+ * Created by yangxinming on 14-5-22.
+ */
 (function() {
     var EMPTY = {},
         PATH_RE = /[^?#]*\//,
