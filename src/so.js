@@ -27,7 +27,7 @@
         return code.replace(reComment, '');
     }
 
-    function guard_apply(fn, thisp, vargs) {
+    function bind(fn, thisp, vargs) {
         try {
             return fn.apply(thisp, vargs || [])
         } catch (ex) {
@@ -93,7 +93,7 @@
     p.trigger = function(type, args) {
         var this_ = this;
         return reduce(get_values(getHandles(this, type, false)), function(prevVal, handle) {
-            return guard_apply(handle, this_, [args])
+            return bind(handle, this_, [args])
         }, true)
     }
 
@@ -142,7 +142,7 @@
     }
 
     p.onLoad = function() {
-        this.val = guard_apply(this.def, null, []);
+        this.val = bind(this.def, null, []);
         this.loading = false;
         this.trigger("mod", this);
         return this.val
