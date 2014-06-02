@@ -256,7 +256,7 @@
     };
 
     var loader = new ModLoader();
-    var require = function(p, callback) {
+    global['require'] = function(p, callback) {
         if (typeof p === "function") {
             return loader.getDef(p)
         } else if (typeof p === "string") {
@@ -271,12 +271,10 @@
                 }
                 loader.loadMod(mod, empty)
             }
+		}else if(typeof p === 'object'){
+			bootPath = p['base'] + "/"
         } else {
             throw ""
         }
     }
-    require['config'] = function(data){
-        bootPath = data['base'];
-    }
-    global['require'] = require;
 })()
