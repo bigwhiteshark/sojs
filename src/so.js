@@ -6,7 +6,7 @@
         PATH_RE = /[^?#]*\//,
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         doc = document,
-        empty = new Function,
+        EMPTY_FN = new Function,
         bootPath = get_script_path(),
         head = doc.head,
         global = this;
@@ -243,7 +243,7 @@
         } else {
             mod = this.getMod(this.numUnknowns++);
             mod.onLoadDef(def);
-            this.loadMod(mod, empty)
+            this.loadMod(mod, EMPTY_FN)
         }
     }
 
@@ -251,12 +251,12 @@
         this.suspended = false;
         if (this.queues.length) {
             var task = this.queues.shift();
-            this.loadDef(task, empty)
+            this.loadDef(task, EMPTY_FN)
         }
     };
 
     var loader = new ModLoader();
-    var require = function(p, callback) {
+    global['require'] = function(p, callback) {
         if (typeof p === "function") {
             return loader.getDef(p)
         } else if (typeof p === "string") {
@@ -269,14 +269,12 @@
                 if (mod.val !== EMPTY) {
                     return mod.val
                 }
-                loader.loadMod(mod, empty)
+                loader.loadMod(mod, EMPTY_FN)
             }
+        } else if(typeof p === 'object'){
+			bootPath = p['base'] + "/"
         } else {
             throw ""
         }
     }
-    require['config'] = function(data){
-        bootPath = data['base'];
-    }
-    global['require'] = require;
 })()
