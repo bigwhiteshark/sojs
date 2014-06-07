@@ -11,6 +11,7 @@
         bootPath = get_script_path(),
         head = doc.head,
         global = this;
+
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
     }
@@ -114,8 +115,9 @@
         var result = url.match(PATH_RE);
         return result ? result[0] : './'
     }
-    function parse_deps(def) {
-        var code = strip_comments(def + "");
+
+    function parse_deps(factory) {
+        var code = strip_comments(factory + "");
         var match;
         var ret = [];
         while (match = DEPS_RE.exec(code)) {
@@ -135,28 +137,26 @@
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
 
-    p.onLoadDef = function(def) {
-        this.def = def;
-        this.deps = parse_deps(def);
-        this.count = this.deps.length;
-        this.trigger("def", this)
+    p.onDefine = function(factory) {
+        this.factory = factory;
+        this.deps = parse_deps(factory);
+        this.trigger("define", this)
     }
 
     p.onLoad = function() {
-        var factory = this.def;
+        var factory = this.factory;
         var ret =  (typeof factory == 'function')
                 ? bind(factory,this,[require, this.exports, this])
                 :factory;
         ret && (this.exports = ret);
         this.loading = false;
-        this.trigger("mod", this);
+        this.trigger("load", this);
         return this.exports
     }
 
     function ModLoader() {
         this.modMap = {};
         this.queues = [];
-        this.numUnknowns = 0;
     }
     inherits(ModLoader, EventTarget);
 
@@ -177,17 +177,18 @@
             return
         }
         var this_ = this;
-        mod.once("mod", callback);
+        mod.once("load", callback);
         if (!mod.loading) {
             mod.loading = true;
             this.loadDef(mod, function() {
-                if (!mod.count) {
+                var count = mod.deps.length;
+                if (!count) {
                     mod.onLoad()
                 } else {
                     var deps = mod.deps;
                     for (var i = 0; i < deps.length; i++) {
                         this_.loadMod(deps[i], function() {
-                            if (!--mod.count) {
+                            if (!--count) {
                                 return mod.onLoad()
                             }
                         }, mod._path)
@@ -199,64 +200,52 @@
 
     p.loadDef = function(path, callback) {
         var mod = this.getMod(path);
-        if (mod.def) {
-            return callback(mod.def);
-        }
-        mod.once("def", callback);
-        if (!mod.defLoading) {
-            mod.defLoading = true;
-            if (this.suspended) {
-                if (!mod.queued) {
-                    this.queues.push(path);
-                    mod.queued = true
+        mod.once("define", callback);
+        if (this.suspended) {
+            if (!mod.queued) {
+                this.queues.push(path);
+                mod.queued = true
+            }
+        } else {
+            this.suspended = true;
+            this.currentMod = mod;
+            var node = doc.createElement("script");
+
+            function onload() {
+                node.onload = node.onerror = node.onreadystatechange = null
+                head.removeChild(node)
+                node = null
+            }
+            if ("onload" in node) {
+                node.onload = onload;
+                node.onerror = function() {
+                    onload()
                 }
-                mod.defLoading = false
             } else {
-                this.suspended = true;
-                this.currentMod = mod;
-                var node = doc.createElement("script");
-                function onload() {
-                    node.onload = node.onerror = node.onreadystatechange = null
-                    head.removeChild(node)
-                    node = null
-                }
-                if ("onload" in node) {
-                    node.onload = onload;
-                    node.onerror = function() {
+                node.onreadystatechange = function() {
+                    if (/loaded|complete/.test(node.readyState)) {
                         onload()
                     }
-                } else {
-                    node.onreadystatechange = function() {
-                        if (/loaded|complete/.test(node.readyState)) {
-                            onload()
-                        }
-                    }
                 }
-                node.src = mod._fullPath;
-                node.charset = 'utf-8';
-                head.appendChild(node)
             }
+            node.src = mod._fullPath;
+            node.charset = 'utf-8';
+            head.appendChild(node)
         }
     }
 
-    p.getDef = function(def) {
+    p.getDef = function(factory) {
         var mod = this.currentMod;
         delete this.currentMod;
-        if (mod) {
-            mod.onLoadDef(def);
-            this.resume()
-        } else {
-            mod = this.getMod(this.numUnknowns++);
-            mod.onLoadDef(def);
-            this.loadMod(mod, EMPTY_FN)
-        }
+        mod.onDefine(factory);
+        this.resume()
     }
 
     p.resume = function() {
         this.suspended = false;
         if (this.queues.length) {
-            var task = this.queues.shift();
-            this.loadDef(task, EMPTY_FN)
+            var mod = this.queues.shift();
+            this.loadDef(mod, EMPTY_FN)
         }
     };
 
@@ -264,23 +253,17 @@
     global['define'] = function (p){
         return loader.getDef(p)
     };
-    global['require'] = function(p, callback) {
-        if (typeof p === "function" || typeof p ==='object') {
-            return loader.getDef(p)
-        } else if (typeof p === "string") {
-            var mod = loader.getMod(p);
-            if (callback) {
-                loader.loadMod(mod, function(mod) {
-                    callback(mod.exports)
-                })
-            } else {
-                if (mod.exports !== EMPTY) {
-                    return mod.exports
-                }
-                loader.loadMod(mod, EMPTY_FN)
-            }
+    global['require'] = function(id, callback) {
+        var mod = loader.getMod(id);
+        if (callback) {
+            loader.loadMod(mod, function(mod) {
+                callback(mod.exports)
+            })
         } else {
-            throw ""
+            if (mod.exports !== EMPTY) {
+                return mod.exports
+            }
+            loader.loadMod(mod, EMPTY_FN)
         }
     }
 
