@@ -1,4 +1,4 @@
-require(function(exports,module){
+define(function(exports,module){
 	function Printer(){
 	}
 	var p = Printer.prototype;

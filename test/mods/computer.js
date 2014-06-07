@@ -1,9 +1,11 @@
-require(function(exports,module){
+define(function(require,exports,module){
+	console.log(exports,module)
 	function Computer(){
 	}
 	var p = Computer.prototype;
 	p.add = function(a,b){
 		return a+b
 	}
-	return Computer
+	//exports.Computer = Computer
+	module.exports = Computer
 });
