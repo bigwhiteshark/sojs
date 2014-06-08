@@ -1,1 +1,1 @@
-define('I am a template. My name is {{name}}.');
+define('I am sojs that a tiny javascript on-demand module loader.');

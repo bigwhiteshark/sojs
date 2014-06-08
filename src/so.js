@@ -144,10 +144,10 @@
     }
 
     p.onLoad = function() {
-        var factory = this.factory;
-        var ret =  (typeof factory == 'function')
-                ? bind(factory,this,[require, this.exports, this])
-                :factory;
+        var f = this.factory;
+        var ret =  (typeof f == 'function')
+                ? bind(f,this,[require, this.exports = {}, this])
+                :f;
         ret && (this.exports = ret);
         this.loading = false;
         this.trigger("load", this);
@@ -247,13 +247,19 @@
             var mod = this.queues.shift();
             this.loadDef(mod, EMPTY_FN)
         }
-    };
+    }
 
     var loader = new ModLoader();
-    global['define'] = function (p){
+    var sojs = global.sojs = {};
+    sojs.config = function(pathMap){
+        bootPath = pathMap['base'];
+    }
+
+    global.define = function (p){
         return loader.getDef(p)
-    };
-    global['require'] = function(id, callback) {
+    }
+
+    global.require = function(id, callback) {
         var mod = loader.getMod(id);
         if (callback) {
             loader.loadMod(mod, function(mod) {
@@ -267,5 +273,4 @@
         }
     }
 
-    bootPath =  "./";
 })()
