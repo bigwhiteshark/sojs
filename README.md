@@ -19,19 +19,19 @@ sosj是一个符合AMD/CMD规范（进行中...），目的在于希望开发者
 
 	示例：
 
-	define(function(require,exports,module){
-		function Computer(){
-		}
-		var p = Computer.prototype;
-		p.add = function(a,b){
-			return a+b
-		}
-		module.exports = Computer
-	});
+		define(function(require,exports,module){
+			function Computer(){
+			}
+			var p = Computer.prototype;
+			p.add = function(a,b){
+				return a+b
+			}
+			module.exports = Computer
+		});
 
-	define({ name: "bigwhiteshark" });
+		define({ name: "bigwhiteshark" });
 
-	define('I am sojs that a tiny javascript on-demand module loader.');
+		define('I am sojs that a tiny javascript on-demand module loader.');
 
   **define** (id?,deps?,depenfactory) 
 
