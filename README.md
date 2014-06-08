@@ -17,7 +17,7 @@ define 接受 factory 参数，factory 可以是一个函数，也可以是一�
 
 factory提供了3个参数：**require**, **exports**, **module**，用于模块的引用和导出。
 
-	示例：
+代码示例：
 
 		define(function(require,exports,module){
 			function Computer(){
