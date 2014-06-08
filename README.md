@@ -7,7 +7,7 @@ sosj是一个符合AMD/CMD规范（进行中...），目的在于希望开发者
 
 ## 使用
 
-**模块的定义**
+**1) 模块的定义**
 
 使用define来定义一个模块，define 是一个全局函数，用来定义模块:
 
@@ -16,8 +16,6 @@ sosj是一个符合AMD/CMD规范（进行中...），目的在于希望开发者
 define 接受 factory 参数，factory 可以是一个函数，也可以是一个对象或字符串。
 
 factory提供了3个参数：**require**, **exports**, **module**，用于模块的引用和导出。
-
-代码示例：
 
 		define(function(require,exports,module){
 			function Computer(){
@@ -33,24 +31,27 @@ factory提供了3个参数：**require**, **exports**, **module**，用于模块
 
 		define('I am sojs that a tiny javascript on-demand module loader.');
 
-  **define** (id?,deps?,depenfactory) 
+  **define** (id?,deps?,depenfactory) (继续完善中。。。)
 
   define 也可以接受两个以上参数。字符串 id 表示模块标识，数组 deps 是模块依赖。
 
   **注：暂时不支持，实现中...**
 
-**模块的引用**
+**2)模块的引用**
 
 **require Function**
 
 require是一个全局函数，也可以是 factory 函数的第一个参数。
 
-require require(id)
+**require require(id)**
 
 require 是一个方法，接受 模块标识 作为唯一参数，用来获取其他模块提供的接口。和NodeJS里获取模块的方式一样，非常简单。
 
-代码示例
-		
+		//引用printer模块
+		var printer = require('mods/printer.js');
+		//调用模块 printer 的方法
+		printer.echo();
+
 		define(function(require, exports) {
 
 		  // 获取模块 a 的接口
@@ -63,14 +64,66 @@ require 是一个方法，接受 模块标识 作为唯一参数，用来获取�
 
 **注意：** 在开发时，require 的书写需要遵循一些 简单约定。
 
-**require(id, callback?)**
+**require(id, callback?)** (继续完善中。。。)
+
+ 如果callback方法不为空，用来在模块内部异步加载模块，并在加载完成后执行指定回调。
+
+		define(function(require, exports, module) {
+
+		  // 异步加载一个模块，在加载完成时，执行回调
+		  require('./b.js', function(b) {
+		    b.doSomething();
+		  });
+
+		});
+
+**exports Object**
+
+exports 是一个对象，用来向外提供模块接口。
+
+	define(function(require, exports) {
+
+	  // 对外提供 name 属性
+	  exports.name = 'bigwhiteshark';
+
+	  // 对外提供 doSomething 方法
+	  exports.doSomething = function() {};
+
+	});
+
+除了给 exports 对象增加成员，还可以使用 return 直接向外提供接口。
+
+	define(function(require) {
+
+	  // 通过 return 直接提供接口
+	  return {
+	    name: 'bigwhiteshark',
+	    doSomething: function() {}
+	  };
+
+	});
+
+如果 return 语句是模块中的唯一代码，还可简化为：
+
+	define({
+	  name: 'bigwhiteshark',
+	  doSomething: function() {}
+	});
+
+**module Object** (继续完善中。。。)
+
+module 是一个对象，上面存储了与当前模块相关联的一些属性和方法。
 
 
 ##TODO
 
-*并且支持开发者模式，方便代码调试；
+*完善CMD/AMD规范的实现;
 
-*同时可以根据提供的高性能的构建工具；
+*支持开发者模式，方便代码调试；
+
+*提供高性能的构建工具；
+
+*一键CDN发布功能；
 
 
 
