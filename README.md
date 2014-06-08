@@ -35,15 +35,42 @@ factory提供了3个参数：**require**, **exports**, **module**，用于模块
 
   **define** (id?,deps?,depenfactory) 
 
-  define 也可以接受两个以上参数。字符串 id 表示模块标识，数组 deps 是模块依赖。注：暂时不支持，实现中...
+  define 也可以接受两个以上参数。字符串 id 表示模块标识，数组 deps 是模块依赖。
 
+  **注：暂时不支持，实现中...**
+
+**模块的引用**
+
+**require Function**
+
+require是一个全局函数，也可以是 factory 函数的第一个参数。
+
+require require(id)
+
+require 是一个方法，接受 模块标识 作为唯一参数，用来获取其他模块提供的接口。和NodeJS里获取模块的方式一样，非常简单。
+
+代码示例
+		
+		define(function(require, exports) {
+
+		  // 获取模块 a 的接口
+		  var a = require('./a.js');
+
+		  // 调用模块 a 的方法
+		  a.doSomething();
+
+		});
+
+**注意：** 在开发时，require 的书写需要遵循一些 简单约定。
+
+**require(id, callback?)**
 
 
 ##TODO
 
-并且支持开发者模式，方便代码调试；
+*并且支持开发者模式，方便代码调试；
 
-同时可以根据提供的高性能的构建工具；
+*同时可以根据提供的高性能的构建工具；
 
 
 
