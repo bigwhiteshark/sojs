@@ -6,12 +6,24 @@
 sosj是一个符合AMD/CMD规范（进行中...），目的在于希望开发者能够按模块开发，像使用java、c++、python、php等语言一样，有模块的概念，可以导入模块。通过使用sojs可以像nodeJs一样按模块进进行编程。
 
 ## 使用
+模块系统的基础路径即 base 的默认值，与 so.js 的访问路径相关：
 
-**1) 模块的定义**
+	如果 so.js 的访问路径是：
+	  http://example.com/assets/so.js
 
-使用define来定义一个模块，define 是一个全局函数，用来定义模块:
+	则 base 路径为：
+	  http://example.com/assets/
 
-**define** (factory)	
+也可以手工配置 base 路径：
+
+	sojs.config({
+	  base: './'
+	});
+
+
+**define** (factory)
+
+define 是一个全局函数，用来定义模块:
 
 define 接受 factory 参数，factory 可以是一个函数，也可以是一个对象或字符串。
 
@@ -36,8 +48,6 @@ factory提供了3个参数：**require**, **exports**, **module**，用于模块
   define 也可以接受两个以上参数。字符串 id 表示模块标识，数组 deps 是模块依赖。
 
   **注：暂时不支持，实现中...**
-
-**2)模块的引用**
 
 **require Function**
 
@@ -121,9 +131,9 @@ module 是一个对象，上面存储了与当前模块相关联的一些属性�
 
 *支持开发者模式，方便代码调试；
 
-*提供高性能的构建工具；
+* 提供高性能的构建工具；
 
-*一键CDN发布功能；
+* 一键CDN发布功能；
 
 
 
