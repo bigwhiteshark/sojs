@@ -43,11 +43,9 @@ factory提供了3个参数：**require**, **exports**, **module**，用于模块
 
 		define('I am sojs that a tiny javascript on-demand module loader.');
 
-  **define** (id?,deps?,factory) (继续完善中。。。)
+  **define** (id?,deps?,factory)
 
   define 也可以接受两个以上参数。字符串 id 表示模块标识，数组 deps 是模块依赖。
-
-  **注：暂时不支持，实现中...**
 
 **require Function**
 
