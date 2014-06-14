@@ -20,7 +20,7 @@
         for (var k in o)
             if (has(o, k)) {
                 if (fn(o[k], k) === false)
-                    return false;
+                    return false
             }
     }
 
@@ -51,7 +51,7 @@
         for_in(obj, function(value) {
             ret.push(value);
         });
-        return ret;
+        return ret
     }
 
     var get_uid = function() {
@@ -102,7 +102,7 @@
     function inherits(s, b) {
         var f = function() {};
         f.prototype = b.prototype;
-        s.prototype = new f;
+        s.prototype = new f
     }
 
     function tags(name, root) {
@@ -135,7 +135,7 @@
     function Mod(path) {
         this._path = path;
         this._fullPath = bootPath + path;
-        this.exports = EMPTY;
+        this.exports = EMPTY
     }
 
     inherits(Mod, EventTarget);
@@ -240,10 +240,11 @@
     }
 
     p.getDef = function(factory,id,deps) {
+        debugger;
         var mod = this.currentMod;
         delete this.currentMod;
         mod.onDefine(factory,deps);
-        this.resume();
+        this.resume()
     }
 
     p.resume = function() {
@@ -257,7 +258,7 @@
     var loader = new ModLoader();
     var sojs = global.sojs = {};
     sojs.config = function(pathMap){
-        bootPath = pathMap['base'];
+        bootPath = pathMap['base']
     }
 
     global.define = function (id, deps, factory){
@@ -266,9 +267,7 @@
             factory = id;
         }else if(len == 2){
             factory = deps;
-            if(is_array(id)){
-                deps = id;
-            }
+            is_array(id) ? deps = id : deps = null;
         }
         loader.getDef(factory,id,deps)
     }
