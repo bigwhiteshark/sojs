@@ -58,7 +58,7 @@
         var num = -1,
             key = (+new Date).toString(32);
         return function(obj) {
-            return obj[key] || (obj[key] = ":" + ++num)
+            return obj[key] || (obj[key] = ':' + ++num)
         }
     }()
 
@@ -110,14 +110,18 @@
     }
 
     function get_script_path() {
-        var scripts = tags("script");
-        var url = scripts[scripts.length - 1].getAttribute("src");
+        var scripts = tags('script');
+        var url = scripts[scripts.length - 1].getAttribute('src');
         var result = url.match(PATH_RE);
         return result ? result[0] : './'
     }
 
+    function is_array(o){
+       return {}.toString.call(o) == '[object Array]'
+    }
+
     function parse_deps(factory) {
-        var code = strip_comments(factory + "");
+        var code = strip_comments(factory + '');
         var match;
         var ret = [];
         while (match = DEPS_RE.exec(code)) {
@@ -137,10 +141,11 @@
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
 
-    p.onDefine = function(factory) {
+    p.onDefine = function(factory,deps) {
         this.factory = factory;
         this.deps = parse_deps(factory);
-        this.trigger("define", this)
+        deps && (this.deps = deps.concat(this.deps))
+        this.trigger('define', this)
     }
 
     p.onLoad = function() {
@@ -150,7 +155,7 @@
                 :f;
         ret && (this.exports = ret);
         this.loading = false;
-        this.trigger("load", this);
+        this.trigger('load', this);
         return this.exports
     }
 
@@ -177,7 +182,7 @@
             return
         }
         var this_ = this;
-        mod.once("load", callback);
+        mod.once('load', callback);
         if (!mod.loading) {
             mod.loading = true;
             this.loadDef(mod, function() {
@@ -200,7 +205,7 @@
 
     p.loadDef = function(path, callback) {
         var mod = this.getMod(path);
-        mod.once("define", callback);
+        mod.once('define', callback);
         if (this.suspended) {
             if (!mod.queued) {
                 this.queues.push(path);
@@ -209,14 +214,14 @@
         } else {
             this.suspended = true;
             this.currentMod = mod;
-            var node = doc.createElement("script");
+            var node = doc.createElement('script');
 
             function onload() {
                 node.onload = node.onerror = node.onreadystatechange = null
                 head.removeChild(node)
                 node = null
             }
-            if ("onload" in node) {
+            if ('onload' in node) {
                 node.onload = onload;
                 node.onerror = function() {
                     onload()
@@ -234,11 +239,11 @@
         }
     }
 
-    p.getDef = function(factory) {
+    p.getDef = function(factory,id,deps) {
         var mod = this.currentMod;
         delete this.currentMod;
-        mod.onDefine(factory);
-        this.resume()
+        mod.onDefine(factory,deps);
+        this.resume();
     }
 
     p.resume = function() {
@@ -255,8 +260,17 @@
         bootPath = pathMap['base'];
     }
 
-    global.define = function (p){
-        return loader.getDef(p)
+    global.define = function (id, deps, factory){
+        var len = arguments.length;
+        if(len == 1){
+            factory = id;
+        }else if(len == 2){
+            factory = deps;
+            if(is_array(id)){
+                deps = id;
+            }
+        }
+        loader.getDef(factory,id,deps)
     }
 
     global.require = function(id, callback) {
