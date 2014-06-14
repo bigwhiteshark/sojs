@@ -124,7 +124,7 @@ exports 是一个对象，用来向外提供模块接口。
 	  doSomething: function() {}
 	});
 
-**module Object** (继续完善中。。。)
+**module Object** 
 
 module 是一个对象，上面存储了与当前模块相关联的一些属性和方法。
 
