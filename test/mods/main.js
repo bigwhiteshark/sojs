@@ -12,13 +12,18 @@ define(function(require,exports,module){
 	var util = require('mods/util.js');
 	console.log(util.multify(6,3))*/
 
-	var def = require('mods/def.js');
+	/*var def = require('mods/def.js');
 	(new def).output('sss')
-
+*/
 	//var dep = require('hello.js');
     /*var computer = new Computer;
     var printer = new Printer;
     var sum = computer.add(5,4);
     printer.echo(sum)*/
+
+    require(['mods/util.js','mods/computer.js'],function(o){
+    	console.log('ddd')
+		//console.log(o.multify(3,5))
+	});
     
 });

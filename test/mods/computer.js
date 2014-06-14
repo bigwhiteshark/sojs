@@ -1,4 +1,5 @@
 define(function(require,exports,module){
+	console.log('computer.js')
 	function Computer(){
 	}
 	var p = Computer.prototype;

@@ -1,16 +1,16 @@
 /**
  * Created by yangxinming on 14-5-22.
  * https://github.com/bigwhiteshark/sojs
+ * modified
  */
-(function() {
+(function(global) {
     var EMPTY = {},
         PATH_RE = /[^?#]*\//,
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         doc = document,
         EMPTY_FN = new Function,
         bootPath = get_script_path(),
-        head = doc.head,
-        global = this;
+        head = doc.head;
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
@@ -132,9 +132,10 @@
         return ret
     }
 
-    function Mod(path) {
+    function Mod(path,deps) {
         this._path = path;
         this._fullPath = bootPath + path;
+        this.deps = deps;
         this.exports = EMPTY
     }
 
@@ -166,12 +167,12 @@
     inherits(ModLoader, EventTarget);
 
     var p = ModLoader.prototype;
-    p.getMod = function(mod) {
+    p.getMod = function(mod,deps) {
         if (mod instanceof Mod) {
             this.modMap[mod._path] = mod;
             return mod
         } else {
-            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod))
+            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod,deps))
         }
     }
 
@@ -242,7 +243,7 @@
     p.getDef = function(factory,id,deps) {
         var mod = this.currentMod;
         delete this.currentMod;
-        mod.onDefine(factory,deps);
+        mod.onDefine(factory,deps || mod.deps);
         this.resume()
     }
 
@@ -272,7 +273,13 @@
     }
 
     global.require = function(id, callback) {
-        var mod = loader.getMod(id);
+        var mod,deps;
+        if(is_array(id)){
+            var len = id.length-1;
+            deps = id.slice(0,len);
+            id = id[len];
+        }
+        var mod = loader.getMod(id,deps);
         if (callback) {
             loader.loadMod(mod, function(mod) {
                 callback(mod.exports)
@@ -285,4 +292,4 @@
         }
     }
 
-})()
+})(this)
