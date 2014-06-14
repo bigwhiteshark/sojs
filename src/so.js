@@ -240,7 +240,6 @@
     }
 
     p.getDef = function(factory,id,deps) {
-        debugger;
         var mod = this.currentMod;
         delete this.currentMod;
         mod.onDefine(factory,deps);
