@@ -215,28 +215,28 @@
         } else {
             this.suspended = true;
             this.currentMod = mod;
-            var node = doc.createElement('script');
+            var elem = doc.createElement('script');
 
             function onload() {
-                node.onload = node.onerror = node.onreadystatechange = null
-                head.removeChild(node)
-                node = null
+                elem.onload = elem.onerror = elem.onreadystatechange = null
+                head.removeChild(elem)
+                elem = null
             }
-            if ('onload' in node) {
-                node.onload = onload;
-                node.onerror = function() {
+            if ('onload' in elem) {
+                elem.onload = onload;
+                elem.onerror = function() {
                     onload()
                 }
             } else {
-                node.onreadystatechange = function() {
-                    if (/loaded|complete/.test(node.readyState)) {
+                elem.onreadystatechange = function() {
+                    if (/loaded|complete/.test(elem.readyState)) {
                         onload()
                     }
                 }
             }
-            node.src = mod._fullPath;
-            node.charset = 'utf-8';
-            head.appendChild(node)
+            elem.src = mod._fullPath;
+            elem.charset = 'utf-8';
+            head.appendChild(elem)
         }
     }
 
@@ -282,7 +282,14 @@
         var mod = loader.getMod(id,deps);
         if (callback) {
             loader.loadMod(mod, function(mod) {
-                callback(mod.exports)
+                var args=[];
+                for(var i=0,l=mod.deps.length;i<l;i++){
+                    var depMod = loader.modMap[mod.deps[i]];
+                    args.push(depMod.exports)
+                }
+                args.push(mod.exports);
+                console.log(args,'fdafafasf')
+                bind(callback,mod,args);
             })
         } else {
             if (mod.exports !== EMPTY) {
