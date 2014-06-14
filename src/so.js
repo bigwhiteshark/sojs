@@ -288,7 +288,6 @@
                     args.push(depMod.exports)
                 }
                 args.push(mod.exports);
-                console.log(args,'fdafafasf')
                 bind(callback,mod,args);
             })
         } else {
