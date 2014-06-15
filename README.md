@@ -53,7 +53,7 @@ require是一个全局函数，也可以是 factory 函数的第一个参数。
 
 **require require(id)**
 
-require 是一个方法，接受 模块标识 作为唯一参数，用来获取其他模块提供的接口。和NodeJS里获取模块的方式一样，非常简单。
+require 是一个方法，接受 模块标识 作为唯一参数，用来获取其他模块提供的接口。
 
 		//引用printer模块
 		var printer = require('mods/printer');
