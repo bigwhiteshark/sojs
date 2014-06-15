@@ -1,14 +1,15 @@
 /**
  * Created by yangxinming on 14-5-22.
  * https://github.com/bigwhiteshark/sojs
- * modified
+ * author:bigwhiteshark
  */
 (function(global) {
     var EMPTY = {},
         PATH_RE = /[^?#]*\//,
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
-        doc = document,
         EMPTY_FN = new Function,
+        AYSNC_ID = '_aysnc_',
+        doc = document,
         bootPath = get_script_path(),
         head = doc.head;
 
@@ -54,13 +55,11 @@
         return ret
     }
 
-    var get_uid = function() {
-        var num = -1,
-            key = (+new Date).toString(32);
-        return function(obj) {
-            return obj[key] || (obj[key] = ':' + ++num)
-        }
-    }()
+    var num = 0;
+
+    function get_uid() {
+        return ++num;
+    }
 
     function EventHandle(handles, uid) {
         this.handles = handles;
@@ -73,8 +72,7 @@
 
     function getHandles(target, type, force) {
         var handles;
-        return (handles = target._handles || force && (target._handles = {})) 
-                && (handles[type] || force && (handles[type] = {}))
+        return (handles = target._handles || force && (target._handles = {})) && (handles[type] || force && (handles[type] = {}))
     }
 
     function EventTarget() {}
@@ -82,7 +80,7 @@
     var p = EventTarget.prototype;
     p.on = function(type, handle) {
         var handles = getHandles(this, type, true);
-        var uid = get_uid(handle);
+        var uid = get_uid();
         handles[uid] = handle;
         return new EventHandle(handles, uid)
     }
@@ -116,8 +114,8 @@
         return result ? result[0] : './'
     }
 
-    function is_array(o){
-       return {}.toString.call(o) == '[object Array]'
+    function is_array(o) {
+        return {}.toString.call(o) == '[object Array]'
     }
 
     function parse_deps(factory) {
@@ -132,7 +130,7 @@
         return ret
     }
 
-    function Mod(path,deps) {
+    function Mod(path, deps) {
         this._path = path;
         this._fullPath = bootPath + path;
         this.deps = deps;
@@ -142,7 +140,7 @@
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
 
-    p.onDefine = function(factory,deps) {
+    p.onDefine = function(factory, deps) {
         this.factory = factory;
         this.deps = parse_deps(factory);
         deps && (this.deps = deps.concat(this.deps))
@@ -151,9 +149,9 @@
 
     p.onLoad = function() {
         var f = this.factory;
-        var ret =  (typeof f == 'function')
-                ? bind(f,this,[require, this.exports = {}, this])
-                :f;
+        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.loading = false;
         this.trigger('load', this);
@@ -167,12 +165,12 @@
     inherits(ModLoader, EventTarget);
 
     var p = ModLoader.prototype;
-    p.getMod = function(mod,deps) {
+    p.getMod = function(mod, deps) {
         if (mod instanceof Mod) {
             this.modMap[mod._path] = mod;
             return mod
         } else {
-            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod,deps))
+            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps))
         }
     }
 
@@ -215,35 +213,40 @@
         } else {
             this.suspended = true;
             this.currentMod = mod;
-            var elem = doc.createElement('script');
-
-            function onload() {
-                elem.onload = elem.onerror = elem.onreadystatechange = null
-                head.removeChild(elem)
-                elem = null
-            }
-            if ('onload' in elem) {
-                elem.onload = onload;
-                elem.onerror = function() {
-                    onload()
-                }
+            var reg = new RegExp(AYSNC_ID);
+            if (reg.test(mod._path)) {
+                this.getDef()
             } else {
-                elem.onreadystatechange = function() {
-                    if (/loaded|complete/.test(elem.readyState)) {
+                var elem = doc.createElement('script');
+
+                function onload() {
+                    elem.onload = elem.onerror = elem.onreadystatechange = null
+                    head.removeChild(elem)
+                    elem = null
+                }
+                if ('onload' in elem) {
+                    elem.onload = onload;
+                    elem.onerror = function() {
                         onload()
                     }
+                } else {
+                    elem.onreadystatechange = function() {
+                        if (/loaded|complete/.test(elem.readyState)) {
+                            onload()
+                        }
+                    }
                 }
+                elem.src = mod._fullPath;
+                elem.charset = 'utf-8';
+                head.appendChild(elem)
             }
-            elem.src = mod._fullPath;
-            elem.charset = 'utf-8';
-            head.appendChild(elem)
         }
     }
 
-    p.getDef = function(factory,id,deps) {
+    p.getDef = function(factory, id, deps) {
         var mod = this.currentMod;
         delete this.currentMod;
-        mod.onDefine(factory,deps || mod.deps);
+        mod.onDefine(factory, deps || mod.deps);
         this.resume()
     }
 
@@ -257,38 +260,37 @@
 
     var loader = new ModLoader();
     var sojs = global.sojs = {};
-    sojs.config = function(pathMap){
+    sojs.config = function(pathMap) {
         bootPath = pathMap['base']
     }
 
-    global.define = function (id, deps, factory){
+    global.define = function(id, deps, factory) {
         var len = arguments.length;
-        if(len == 1){
+        if (len == 1) {
             factory = id;
-        }else if(len == 2){
+        } else if (len == 2) {
             factory = deps;
             is_array(id) ? deps = id : deps = null;
         }
-        loader.getDef(factory,id,deps)
+        loader.getDef(factory, id, deps)
     }
 
     global.require = function(id, callback) {
-        var mod,deps;
-        if(is_array(id)){
-            var len = id.length-1;
-            deps = id.slice(0,len);
-            id = id[len];
+        var deps;
+        if (is_array(id)) {
+            deps = id;
+            id = AYSNC_ID + get_uid();
         }
-        var mod = loader.getMod(id,deps);
+        var mod = loader.getMod(id, deps);
         if (callback) {
             loader.loadMod(mod, function(mod) {
-                var args=[];
-                for(var i=0,l=mod.deps.length;i<l;i++){
+                var args = [];
+                for (var i = 0, l = mod.deps.length; i < l; i++) {
                     var depMod = loader.modMap[mod.deps[i]];
                     args.push(depMod.exports)
                 }
-                args.push(mod.exports);
-                bind(callback,mod,args);
+                args.push(mod.exports)
+                bind(callback, mod, args);
             })
         } else {
             if (mod.exports !== EMPTY) {
@@ -297,5 +299,4 @@
             loader.loadMod(mod, EMPTY_FN)
         }
     }
-
 })(this)
