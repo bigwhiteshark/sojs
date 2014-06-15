@@ -8,7 +8,7 @@
         PATH_RE = /[^?#]*\//,
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         EMPTY_FN = new Function,
-        AYSNC_ID = '_aysnc_',
+        SYNC_ID = '__sync__',
         doc = document,
         bootPath = get_script_path(),
         head = doc.head;
@@ -140,18 +140,17 @@
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
 
-    p.onDefine = function(factory, deps) {
+    p.onDefine = function(factory, id, deps) {
         this.factory = factory;
         this.deps = parse_deps(factory);
+        //!this._path && (this._path = id);
         deps && (this.deps = deps.concat(this.deps))
         this.trigger('define', this)
     }
 
     p.onLoad = function() {
         var f = this.factory;
-        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},
-            this
-        ]) : f;
+        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},this]) : f;
         ret && (this.exports = ret);
         this.loading = false;
         this.trigger('load', this);
@@ -161,6 +160,7 @@
     function ModLoader() {
         this.modMap = {};
         this.queues = [];
+        this.numUnknowns = 0;
     }
     inherits(ModLoader, EventTarget);
 
@@ -193,7 +193,7 @@
                     for (var i = 0; i < deps.length; i++) {
                         this_.loadMod(deps[i], function() {
                             if (!--count) {
-                                return mod.onLoad()
+                               return mod.onLoad()
                             }
                         }, mod._path)
                     }
@@ -213,8 +213,8 @@
         } else {
             this.suspended = true;
             this.currentMod = mod;
-            var reg = new RegExp(AYSNC_ID);
-            if (reg.test(mod._path)) {
+            var reg = new RegExp(SYNC_ID);
+            if (reg.test(mod._path) || mod.sync) {
                 this.getDef()
             } else {
                 var elem = doc.createElement('script');
@@ -236,7 +236,11 @@
                         }
                     }
                 }
-                elem.src = mod._fullPath;
+                var url = mod._fullPath;
+                if(!/\.js$/i.test(url)){
+                    url +='.js'; 
+                }
+                elem.src = url;
                 elem.charset = 'utf-8';
                 head.appendChild(elem)
             }
@@ -246,8 +250,15 @@
     p.getDef = function(factory, id, deps) {
         var mod = this.currentMod;
         delete this.currentMod;
-        mod.onDefine(factory, deps || mod.deps);
-        this.resume()
+        if(mod){
+            mod.onDefine(factory || mod.factory, id, deps || mod.deps);
+            this.resume()
+        }else {
+            mod = this.getMod(id);
+            mod.sync = true;
+            mod.onDefine(factory);
+            this.loadMod(mod, EMPTY_FN)
+        }
     }
 
     p.resume = function() {
@@ -279,7 +290,7 @@
         var deps;
         if (is_array(id)) {
             deps = id;
-            id = AYSNC_ID + get_uid();
+            id = SYNC_ID + get_uid();
         }
         var mod = loader.getMod(id, deps);
         if (callback) {

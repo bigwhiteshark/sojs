@@ -2,14 +2,48 @@
 <html>
 <meta charset='utf-8'>
 <head>
-	<script type="text/javascript" src="../dist/so.js"></script>
+	<script type="text/javascript" src="../src/so.js"></script>
 </head>
 <body>
 <script type="text/javascript">
 	sojs.config({
 		base:'./'
 	})
+
+	define('ta',function(require, exports, module) {
+		function Test(){
+
+		}
+		var p = Test.prototype;
+		p.say = function(a){
+			console.log(a)
+		}
+		console.log('test mods');
+		return Test
+	});
+
+	var ta = require('ta');
+	console.log(ta)
+
+	define('mm',function(require, exports, module) {
+		var ta = require('ta');
+		console.log(ta);
+
+		function MM(){
+
+		}
+		var p = MM.prototype;
+		p.say = function(a){
+			console.log(a)
+		}
+		console.log('mm mods');
+		return MM
+	});
+	var mm = require('mm');
+	console.log(mm);
+
 	require('mods/main.js');
+
 </script>
 </body>
 </html>

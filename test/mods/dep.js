@@ -1,8 +1,10 @@
 define(function(require,exports,module){
-	function dep(){
+	function Dep(){
 	}
-	dep.prototype.output=function(a){
+	Dep.prototype.output=function(a){
 		console.log(a)
 	}
-	window.dep = dep;
+	console.log('dep mods')
+	window.Dep = Dep;
+	module.exports = Dep;
 })

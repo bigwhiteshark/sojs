@@ -56,14 +56,14 @@ require是一个全局函数，也可以是 factory 函数的第一个参数。
 require 是一个方法，接受 模块标识 作为唯一参数，用来获取其他模块提供的接口。和NodeJS里获取模块的方式一样，非常简单。
 
 		//引用printer模块
-		var printer = require('mods/printer.js');
+		var printer = require('mods/printer');
 		//调用模块 printer 的方法
 		printer.echo();
 
 		define(function(require, exports) {
 
 		  // 获取模块 a 的接口
-		  var a = require('./a.js');
+		  var a = require('./a');
 
 		  // 调用模块 a 的方法
 		  a.doSomething();
@@ -79,12 +79,12 @@ require 是一个方法，接受 模块标识 作为唯一参数，用来获取�
 		define(function(require, exports, module) {
 
 		  // 异步加载一个模块，在加载完成时，执行回调
-		  require('./b.js', function(b) {
+		  require('./b', function(b) {
 		    b.doSomething();
 		  });
 
 		   // 异步加载多个模块，在加载完成时，执行回调
-		  require.async(['./c.js', './d.js'], function(c, d) {
+		  require(['./c', './d'], function(c, d) {
 		    c.doSomething();
 		    d.doSomething();
 		  });
