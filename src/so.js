@@ -160,7 +160,6 @@
     function ModLoader() {
         this.modMap = {};
         this.queues = [];
-        this.numUnknowns = 0;
     }
     inherits(ModLoader, EventTarget);
 
