@@ -9,9 +9,10 @@
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         EMPTY_FN = new Function,
         SYNC_ID = '__sync__',
+        EXT_JS = '.js',
         doc = document,
         bootPath = get_script_path(),
-        head = doc.head;
+        head = doc.head || doc.getElementsByTagName("head")[0] ;
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
@@ -56,7 +57,6 @@
     }
 
     var num = 0;
-
     function get_uid() {
         return ++num;
     }
@@ -76,7 +76,6 @@
     }
 
     function EventTarget() {}
-
     var p = EventTarget.prototype;
     p.on = function(type, handle) {
         var handles = getHandles(this, type, true);
@@ -103,19 +102,19 @@
         s.prototype = new f
     }
 
-    function tags(name, root) {
+    function get_tags(name, root) {
         return (root || doc).getElementsByTagName(name)
     }
 
     function get_script_path() {
-        var scripts = tags('script');
+        var scripts = get_tags('script');
         var url = scripts[scripts.length - 1].getAttribute('src');
         var result = url.match(PATH_RE);
         return result ? result[0] : './'
     }
 
     function is_array(o) {
-        return {}.toString.call(o) == '[object Array]'
+        return EMPTY.toString.call(o) == '[object Array]'
     }
 
     function parse_deps(factory) {
@@ -132,19 +131,15 @@
 
     function Mod(path, deps) {
         this._path = path;
-        this._fullPath = bootPath + path;
-        this.deps = deps;
+        this.deps = deps || [];
         this.exports = EMPTY
     }
-
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
 
     p.onDefine = function(factory, id, deps) {
         this.factory = factory;
-        this.deps = parse_deps(factory);
-        //!this._path && (this._path = id);
-        deps && (this.deps = deps.concat(this.deps))
+        this.deps = deps.concat(parse_deps(factory))
         this.trigger('define', this)
     }
 
@@ -204,20 +199,15 @@
     p.loadDef = function(path, callback) {
         var mod = this.getMod(path);
         mod.once('define', callback);
-        if (this.suspended) {
-            if (!mod.queued) {
-                this.queues.push(path);
-                mod.queued = true
-            }
+        if (this.waiting) {
+            this.queues.push(path);
         } else {
-            this.suspended = true;
+            this.waiting = true;
             this.currentMod = mod;
-            var reg = new RegExp(SYNC_ID);
-            if (reg.test(mod._path) || mod.sync) {
+            if (new RegExp(SYNC_ID).test(mod._path) || mod.sync) {
                 this.getDef()
             } else {
                 var elem = doc.createElement('script');
-
                 function onload() {
                     elem.onload = elem.onerror = elem.onreadystatechange = null
                     head.removeChild(elem)
@@ -235,10 +225,8 @@
                         }
                     }
                 }
-                var url = mod._fullPath;
-                if(!/\.js$/i.test(url)){
-                    url +='.js'; 
-                }
+                var url = bootPath + mod._path;
+                !new RegExp(EXT_JS+'$','i').test(url) && (url += EXT_JS); 
                 elem.src = url;
                 elem.charset = 'utf-8';
                 head.appendChild(elem)
@@ -255,21 +243,20 @@
         }else {
             mod = this.getMod(id);
             mod.sync = true;
-            mod.onDefine(factory);
+            mod.onDefine(factory,id,[]);
             this.loadMod(mod, EMPTY_FN)
         }
     }
 
     p.resume = function() {
-        this.suspended = false;
+        this.waiting = false;
         if (this.queues.length) {
             var mod = this.queues.shift();
             this.loadDef(mod, EMPTY_FN)
         }
     }
 
-    var loader = new ModLoader();
-    var sojs = global.sojs = {};
+    var loader = new ModLoader(),sojs = global.sojs = {};
     sojs.config = function(pathMap) {
         bootPath = pathMap['base']
     }

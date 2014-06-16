@@ -1,6 +1,8 @@
 define(function(require,exports,module){
 	var Computer = require('mods/computer');
 	var Printer = require('mods/printer');
+	var Computer = require('mods/computer');
+	var Printer = require('mods/printer');
 	var obj = require('mods/obj');
 	console.log(obj)
 	var str = require('mods/str');
