@@ -170,10 +170,6 @@
 
     p.loadMod = function(mod, callback) {
         mod = this.getMod(mod);
-        if (mod.exports !== EMPTY) {
-            callback(mod);
-            return
-        }
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
@@ -187,7 +183,7 @@
                     for (var i = 0; i < deps.length; i++) {
                         this_.loadMod(deps[i], function() {
                             if (!--count) {
-                               return mod.onLoad()
+                               mod.onLoad()
                             }
                         }, mod.uri)
                     }
@@ -235,16 +231,17 @@
     }
 
     p.getDef = function(factory, id, deps) {
-        var mod = this.currentMod;
+        var mod = this.currentMod,deps = deps || [];
         delete this.currentMod;
         if(mod){
-            mod.onDefine(factory || mod.factory, id, deps || mod.deps);
+            mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
             this.resume()
         }else {
             mod = this.getMod(id);
             mod.sync = true;
-            mod.onDefine(factory,id, deps || []);
-            this.loadMod(mod, EMPTY_FN)
+            mod.onDefine(factory,id, deps);
+            this.loadMod(mod, EMPTY_FN);
+
         }
     }
 
@@ -256,7 +253,7 @@
         }
     }
 
-    var loader = new ModLoader(),sojs = global.sojs = {};
+    var loader = global.loader= new ModLoader(),sojs = global.sojs = {};
     sojs.config = function(pathMap) {
         bootPath = pathMap['base']
     }
@@ -286,7 +283,7 @@
                     var depMod = loader.modMap[mod.deps[i]];
                     args.push(depMod.exports)
                 }
-                args.push(mod.exports)
+                args.push(mod.exports);
                 bind(callback, mod, args);
             })
         } else {
