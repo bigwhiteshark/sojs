@@ -130,7 +130,7 @@
     }
 
     function Mod(path, deps) {
-        this._path = path;
+        this.uri = path;
         this.deps = deps || [];
         this.exports = EMPTY
     }
@@ -139,7 +139,7 @@
 
     p.onDefine = function(factory, id, deps) {
         this.factory = factory;
-        this.deps = deps.concat(parse_deps(factory))
+        this.deps = deps.concat(parse_deps(factory));
         this.trigger('define', this)
     }
 
@@ -161,7 +161,7 @@
     var p = ModLoader.prototype;
     p.getMod = function(mod, deps) {
         if (mod instanceof Mod) {
-            this.modMap[mod._path] = mod;
+            this.modMap[mod.uri] = mod;
             return mod
         } else {
             return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps))
@@ -189,7 +189,7 @@
                             if (!--count) {
                                return mod.onLoad()
                             }
-                        }, mod._path)
+                        }, mod.uri)
                     }
                 }
             })
@@ -204,7 +204,7 @@
         } else {
             this.waiting = true;
             this.currentMod = mod;
-            if (new RegExp(SYNC_ID).test(mod._path) || mod.sync) {
+            if (new RegExp(SYNC_ID).test(mod.uri) || mod.sync) {
                 this.getDef()
             } else {
                 var elem = doc.createElement('script');
@@ -225,7 +225,7 @@
                         }
                     }
                 }
-                var url = bootPath + mod._path;
+                var url = bootPath + mod.uri;
                 !new RegExp(EXT_JS+'$','i').test(url) && (url += EXT_JS); 
                 elem.src = url;
                 elem.charset = 'utf-8';
@@ -243,7 +243,7 @@
         }else {
             mod = this.getMod(id);
             mod.sync = true;
-            mod.onDefine(factory,id,[]);
+            mod.onDefine(factory,id, deps || []);
             this.loadMod(mod, EMPTY_FN)
         }
     }

@@ -6,6 +6,7 @@ define(function(exports,module){
 		console.log(msg)
 	}
 
+	console.log('Printer mods')
 	return Printer
 
 })

@@ -5,5 +5,6 @@ define(function(require,exports,module){
 	p.add = function(a,b){
 		return a+b
 	}
+	console.log('Computer mods')
 	module.exports = Computer
 });

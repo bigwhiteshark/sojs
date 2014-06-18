@@ -1,4 +1,4 @@
-define('mods/def.js',[], function(require, exports, module) {
+define('mods/def.js',['mods/dep'], function(require, exports, module) {
 	//exports.a = dep;
 	function Def(){
 

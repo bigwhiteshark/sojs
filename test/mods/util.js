@@ -7,5 +7,6 @@ define(function(require,exports,module){
 			return a - b
 		}
 	}
+	console.log('util mods')
 	exports.multify = util.mul; 
 });
