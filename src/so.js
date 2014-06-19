@@ -2,6 +2,7 @@
  * Created by yangxinming on 14-5-22.
  * https://github.com/bigwhiteshark/sojs
  * author:bigwhiteshark
+ * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
     var EMPTY = {},
@@ -175,16 +176,13 @@
         if (!mod.loading) {
             mod.loading = true;
             this.loadDef(mod, function() {
-                var count = mod.deps.length;
+                var deps = mod.deps, count = mod.deps.length;
                 if (!count) {
                     mod.onLoad()
                 } else {
-                    var deps = mod.deps;
                     for (var i = 0; i < deps.length; i++) {
                         this_.loadMod(deps[i], function() {
-                            if (!--count) {
-                               mod.onLoad()
-                            }
+                            !--count && mod.onLoad()
                         }, mod.uri)
                     }
                 }
@@ -241,7 +239,6 @@
             mod.sync = true;
             mod.onDefine(factory,id, deps);
             this.loadMod(mod, EMPTY_FN);
-
         }
     }
 
@@ -253,7 +250,7 @@
         }
     }
 
-    var loader = global.loader= new ModLoader(),sojs = global.sojs = {};
+    var loader = new ModLoader(),sojs = global.sojs = {};
     sojs.config = function(pathMap) {
         bootPath = pathMap['base']
     }
