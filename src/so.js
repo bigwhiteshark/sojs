@@ -251,7 +251,7 @@
         }
     }
 
-    var loader = global.loader = new ModLoader(),sojs = global.sojs = {};
+    var loader = new ModLoader(),sojs = global.sojs = {};
     sojs.config = function(pathMap) {
         bootPath = pathMap['base']
     }
