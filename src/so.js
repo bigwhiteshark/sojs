@@ -119,19 +119,16 @@
     }
 
     function parse_deps(factory) {
-        var code = strip_comments(factory + '');
-        var match;
-        var ret = [];
+        var code = strip_comments(factory + ''),
+            match, ret = [];
         while (match = DEPS_RE.exec(code)) {
-            if (match[1]) {
-                ret.push(match[1])
-            }
+            match[1] && ret.push(match[1])
         }
         return ret
     }
 
-    function Mod(path, deps) {
-        this.uri = path;
+    function Mod(uri, deps) {
+        this.uri = uri;
         this.deps = deps || [];
         this.exports = EMPTY
     }
@@ -190,11 +187,11 @@
         }
     }
 
-    p.loadDef = function(path, callback) {
-        var mod = this.getMod(path);
+    p.loadDef = function(uri, callback) {
+        var mod = this.getMod(uri);
         mod.once('define', callback);
         if (this.waiting) {
-            this.queues.push(path);
+            this.queues.push(uri);
         } else {
             this.waiting = true;
             this.currentMod = mod;
