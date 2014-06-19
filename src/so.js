@@ -168,6 +168,10 @@
 
     p.loadMod = function(mod, callback) {
         mod = this.getMod(mod);
+        if(mod.exports !== EMPTY) {
+            callback(mod);
+            return
+        }
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
@@ -247,7 +251,7 @@
         }
     }
 
-    var loader = new ModLoader(),sojs = global.sojs = {};
+    var loader = global.loader = new ModLoader(),sojs = global.sojs = {};
     sojs.config = function(pathMap) {
         bootPath = pathMap['base']
     }
