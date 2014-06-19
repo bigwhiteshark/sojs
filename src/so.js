@@ -169,8 +169,7 @@
     p.loadMod = function(mod, callback) {
         mod = this.getMod(mod);
         if(mod.exports !== EMPTY) {
-            callback(mod);
-            return
+            return callback(mod)
         }
         var this_ = this;
         mod.once('load', callback);
