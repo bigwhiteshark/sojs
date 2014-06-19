@@ -114,8 +114,8 @@
         return result ? result[0] : './'
     }
 
-    function is_array(o) {
-        return EMPTY.toString.call(o) == '[object Array]'
+    function is_array(obj) {
+        return  obj instanceof Array
     }
 
     function parse_deps(factory) {
