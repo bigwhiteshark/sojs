@@ -71,15 +71,15 @@
         delete this.handles[this.uid]
     }
 
-    function getHandles(target, type, force) {
+    function getHandles(target, type) {
         var handles;
-        return (handles = target._handles || force && (target._handles = {})) && (handles[type] || force && (handles[type] = {}))
+        return (handles = target.handles || (target.handles = {})) && (handles[type] || (handles[type] = {}))
     }
 
     function EventTarget() {}
     var p = EventTarget.prototype;
     p.on = function(type, handle) {
-        var handles = getHandles(this, type, true);
+        var handles = getHandles(this, type);
         var uid = get_uid();
         handles[uid] = handle;
         return new EventHandle(handles, uid)
@@ -92,7 +92,7 @@
     }
     p.trigger = function(type, args) {
         var this_ = this;
-        return reduce(get_values(getHandles(this, type, false)), function(prevVal, handle) {
+        return reduce(get_values(getHandles(this, type)), function(prevVal, handle) {
             return bind(handle, this_, [args])
         }, true)
     }
@@ -127,10 +127,11 @@
         return ret
     }
 
-    function Mod(uri, deps) {
+    function Mod(uri, deps, entry) {
         this.uri = uri;
         this.deps = deps || [];
-        this.exports = EMPTY
+        this.exports = EMPTY;
+        this.entry = entry
     }
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
@@ -142,11 +143,19 @@
     }
 
     p.onLoad = function() {
+        if(this.entry){
+           this.onExec()
+        }
+        delete this.loading;
+        delete this.entry;
+        this.trigger('load', this);
+    }
+
+    p.onExec = function(){        
         var f = this.factory;
         var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},this]) : f;
-        ret && (this.exports = ret);
-        this.loading = false;
-        this.trigger('load', this);
+        ret && (this.exports = ret);        
+        this.trigger('exec', this); 
         return this.exports
     }
 
@@ -157,20 +166,17 @@
     inherits(ModLoader, EventTarget);
 
     var p = ModLoader.prototype;
-    p.getMod = function(mod, deps) {
+    p.getMod = function(mod, deps, entry) {
         if (mod instanceof Mod) {
             this.modMap[mod.uri] = mod;
             return mod
         } else {
-            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps))
+            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry))
         }
     }
 
-    p.loadMod = function(mod, callback) {
-        mod = this.getMod(mod);
-        if(mod.exports !== EMPTY) {
-            return callback(mod)
-        }
+    p.loadMod = function(mod, callback,pMod) {
+        mod = this.getMod(mod,[],pMod && new RegExp(SYNC_ID).test(pMod.uri));
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
@@ -183,7 +189,7 @@
                     for (var i = 0; i < deps.length; i++) {
                         this_.loadMod(deps[i], function() {
                             !--count && mod.onLoad()
-                        }, mod.uri)
+                        }, mod)
                     }
                 }
             })
@@ -266,13 +272,13 @@
         loader.getDef(factory, id, deps)
     }
 
-    global.require = function(id, callback) {
+    global.require = function(id, callback, entry) {
         var deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + get_uid();
         }
-        var mod = loader.getMod(id, deps);
+        var mod = loader.getMod(id, deps, entry);
         if (callback) {
             loader.loadMod(mod, function(mod) {
                 var args = [];
@@ -281,13 +287,18 @@
                     args.push(depMod.exports)
                 }
                 args.push(mod.exports);
-                bind(callback, mod, args);
+                bind(callback, mod,  args);
             })
         } else {
-            if (mod.exports !== EMPTY) {
-                return mod.exports
+            if(entry){
+                loader.loadMod(mod, EMPTY_FN)
+            }else{
+               return mod.exports !== EMPTY ? mod.exports : mod.onExec()
             }
-            loader.loadMod(mod, EMPTY_FN)
         }
+    }
+
+    sojs.use = function(id,callback){
+        require(id,callback,true);
     }
 })(this)

@@ -1,8 +1,14 @@
 define(function(require,exports,module){
+	console.log('main mods');;
 	var Computer = require('mods/computer');	
 	console.log(Computer)
 	var obj = require('mods/obj');
 	console.log(obj)
+
+	var Printer = require('mods/printer');
+    var printer = new Printer;
+     printer.echo('this is printer')
+
 	var str = require('mods/str');
 	console.log(str)
 
@@ -12,13 +18,11 @@ define(function(require,exports,module){
 	var util = require('mods/util');
 	console.log(util.multify(6,3))
 
-	var def = require('mods/def');
-	(new def).output('sss')
+	/*var def = require('mods/def');
+	(new def).output('sss')*/
 		
     var computer = new Computer;
     
-	var Printer = require('mods/printer');
-    var printer = new Printer;
     var sum = computer.add(5,4);
     printer.echo(sum)
 

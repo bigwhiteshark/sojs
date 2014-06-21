@@ -3,3 +3,4 @@ Object.sojs;
 Object.config;
 Object.define;
 Object.require;
+Object.use;

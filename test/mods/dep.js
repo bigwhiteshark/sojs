@@ -1,10 +1,10 @@
 define(function(require,exports,module){
 	function Dep(){
 	}
-	Dep.prototype.output=function(a){
-		console.log(a)
+	var p = Dep.prototype;
+	p.add = function(a,b){
+		return a+b
 	}
-	console.log('dep mods')
-	window.Dep = Dep;
-	module.exports = Dep;
+	console.log('Dep mods')
+	module.exports = Dep
 })
