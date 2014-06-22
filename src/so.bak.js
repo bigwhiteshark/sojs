@@ -71,7 +71,7 @@
         delete this.handles[this.uid]
     }
 
-    function get_handles(target, type) {
+    function getHandles(target, type) {
         var handles;
         return (handles = target.handles || (target.handles = {})) && (handles[type] || (handles[type] = {}))
     }
@@ -79,7 +79,7 @@
     function EventTarget() {}
     var p = EventTarget.prototype;
     p.on = function(type, handle) {
-        var handles = get_handles(this, type);
+        var handles = getHandles(this, type);
         var uid = get_uid();
         handles[uid] = handle;
         return new EventHandle(handles, uid)
@@ -92,7 +92,7 @@
     }
     p.trigger = function(type, args) {
         var this_ = this;
-        return reduce(get_values(get_handles(this, type)), function(prevVal, handle) {
+        return reduce(get_values(getHandles(this, type)), function(prevVal, handle) {
             return bind(handle, this_, [args])
         }, true)
     }
@@ -125,10 +125,6 @@
             match[1] && ret.push(match[1])
         }
         return ret
-    }
-
-    function is_sync(uri){
-        return new RegExp(SYNC_ID).test(uri)
     }
 
     function Mod(uri, deps, entry) {
@@ -180,7 +176,7 @@
     }
 
     p.loadMod = function(mod, callback,pMod) {
-        mod = this.getMod(mod,[],pMod && is_sync(pMod.uri));
+        mod = this.getMod(mod,[],pMod && new RegExp(SYNC_ID).test(pMod.uri));
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
@@ -208,7 +204,7 @@
         } else {
             this.waiting = true;
             this.currentMod = mod;
-            if (is_sync(mod.uri) || mod.sync) {
+            if (new RegExp(SYNC_ID).test(mod.uri) || mod.sync) {
                 this.getDef()
             } else {
                 var elem = doc.createElement('script');
@@ -260,8 +256,10 @@
         }
     }
 
-    var loader =global.loader = new ModLoader(),
-        sojs = global.sojs = {};
+    var loader = new ModLoader(),sojs = global.sojs = {};
+    sojs.config = function(pathMap) {
+        bootPath = pathMap['base']
+    }
 
     global.define = function(id, deps, factory) {
         var len = arguments.length;
@@ -274,15 +272,13 @@
         loader.getDef(factory, id, deps)
     }
 
-    var require = function(id, callback) {
-        var caller = arguments.callee.caller;
-            caller = caller && caller.caller;
+    global.require = function(id, callback, entry) {
         var deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + get_uid();
         }
-        var mod = loader.getMod(id, deps, !caller);
+        var mod = loader.getMod(id, deps, entry);
         if (callback) {
             loader.loadMod(mod, function(mod) {
                 var args = [];
@@ -294,7 +290,7 @@
                 bind(callback, mod,  args);
             })
         } else {
-            if( !caller && !mod.sync){
+            if(entry){
                 loader.loadMod(mod, EMPTY_FN)
             }else{
                return mod.exports !== EMPTY ? mod.exports : mod.onExec()
@@ -302,10 +298,7 @@
         }
     }
 
-    require.config = function(pathMap){
-         bootPath = pathMap['base']
+    sojs.use = function(id,callback){
+        require(id,callback,true);
     }
-
-    global.require = require;
-    
 })(this)

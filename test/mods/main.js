@@ -18,8 +18,8 @@ define(function(require,exports,module){
 	var util = require('mods/util');
 	console.log(util.multify(6,3))
 
-	/*var def = require('mods/def');
-	(new def).output('sss')*/
+	var def = require('mods/def');
+	(new def).output('sss')
 		
     var computer = new Computer;
     

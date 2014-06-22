@@ -1,4 +1,5 @@
 #  sojs
+sojs,so open, so fast, so simple。so,就是如此简单。
 
 ## 简介
 一个极简极小的符合AMD规范按需模块加载器，特点是小巧、简洁、轻量级，目的使开发者能够快速上手，无学习成本，按模块开发。
@@ -16,7 +17,7 @@ sosj是一个符合AMD规范，目的在于希望开发者能够按模块开发�
 
 也可以手工配置 base 路径：
 
-	sojs.config({
+	require.config({
 	  base: './'
 	});
 

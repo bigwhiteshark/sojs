@@ -2,15 +2,15 @@
 <html>
 <meta charset='utf-8'>
 <head>
-	<script type="text/javascript" src="../dist/so.js"></script>
+	<script type="text/javascript" src="../src/so.js"></script>
 </head>
 <body>
 <script type="text/javascript">
-	sojs.config({
+	require.config({
 		base:'./'
 	})
 
-	/*define('mods/test', function(require, exports, module) {
+	define('mods/test', function(require, exports, module) {
 		//exports.a = dep;
 		var Dep = require('mods/dep');
 		function Person(){
@@ -21,19 +21,29 @@
 			console.log(a)
 		}
 
-		var test = new Dep();
-		test.say('fffff')
+		/*var test = new Dep();
+		test.say('fffff')*/
 
 		return Person
-	});*/
+	});
+	//debugger;
+	var test = require('mods/test');
+	console.log(test,'sssssssss')
 
-	sojs.use('mods/main',function(a){
+	/*sojs.use('mods/main',function(a){
 		console.log(a)
 		//ar Dep = require('mods/dep');
 		//console.log(Dep)
 		//(new Dep).say('say entry');
 		console.log('entry')
-	});
+	});*/
+
+/*	function init(){
+		require('mods/main');
+	}
+	init();*/
+
+	require('mods/main')
 </script>
 </body>
 </html>
