@@ -62,13 +62,13 @@
         return ++num;
     }
 
-    function EventHandle(handles, uid) {
+    function EventHandle(handles, guid) {
         this.handles = handles;
-        this.uid = uid
+        this.guid = guid
     }
     var p = EventHandle.prototype;
     p.dispose = function() {
-        delete this.handles[this.uid]
+        delete this.handles[this.guid]
     }
 
     function get_handles(target, type) {
@@ -80,9 +80,9 @@
     var p = EventTarget.prototype;
     p.on = function(type, handle) {
         var handles = get_handles(this, type);
-        var uid = get_uid();
-        handles[uid] = handle;
-        return new EventHandle(handles, uid)
+        var guid = get_uid();
+        handles[guid] = handle;
+        return new EventHandle(handles, guid)
     }
     p.once = function(type, func) {
         var handle = this.on(type, function() {
