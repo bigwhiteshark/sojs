@@ -1,5 +1,5 @@
 #  sojs
-sojs,so open, so fast, so simple。so,就是如此简单。
+sojs,so open, so fast, so simple。so,编程就是如此简单。
 
 ## 简介
 一个极简极小的符合AMD规范按需模块加载器，特点是小巧、简洁、轻量级，目的使开发者能够快速上手，无学习成本，按模块开发。
@@ -127,7 +127,10 @@ exports 是一个对象，用来向外提供模块接口。
 
 **module Object** 
 
-module 是一个对象，上面存储了与当前模块相关联的一些属性和方法。
+module 是一个对象，上面存储了与当前模块相关联的一些属性和方法。\
+
+## 保留字
+sojs
 
 
 ##TODO

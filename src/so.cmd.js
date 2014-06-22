@@ -71,7 +71,7 @@
         delete this.handles[this.uid]
     }
 
-    function getHandles(target, type) {
+    function get_handles(target, type) {
         var handles;
         return (handles = target.handles || (target.handles = {})) && (handles[type] || (handles[type] = {}))
     }
@@ -79,7 +79,7 @@
     function EventTarget() {}
     var p = EventTarget.prototype;
     p.on = function(type, handle) {
-        var handles = getHandles(this, type);
+        var handles = get_handles(this, type);
         var uid = get_uid();
         handles[uid] = handle;
         return new EventHandle(handles, uid)
@@ -92,7 +92,7 @@
     }
     p.trigger = function(type, args) {
         var this_ = this;
-        return reduce(get_values(getHandles(this, type)), function(prevVal, handle) {
+        return reduce(get_values(get_handles(this, type)), function(prevVal, handle) {
             return bind(handle, this_, [args])
         }, true)
     }
@@ -176,7 +176,7 @@
     }
 
     p.loadMod = function(mod, callback,pMod) {
-        mod = this.getMod(mod,[],pMod && (new RegExp(SYNC_ID).test(pMod.uri) || pMod.sync));
+        mod = this.getMod(mod,[],pMod && new RegExp(SYNC_ID).test(pMod.uri));
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
@@ -273,14 +273,11 @@
     }
 
     global.require = function(id, callback, entry) {
-        id = is_array(id) ? id : [id];
-        var deps = id;
-        id = SYNC_ID + get_uid();
-        /*var deps;
+        var deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + get_uid();
-        }*/
+        }
         var mod = loader.getMod(id, deps, entry);
         if (callback) {
             loader.loadMod(mod, function(mod) {
