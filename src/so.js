@@ -260,9 +260,7 @@
         }
     }
 
-    var loader =global.loader = new ModLoader(),
-        sojs = global.sojs = {};
-
+    var sojs = new ModLoader();
     global.define = function(id, deps, factory) {
         var len = arguments.length;
         if (len == 1) {
@@ -271,7 +269,7 @@
             factory = deps;
             is_array(id) ? deps = id : deps = null;
         }
-        loader.getDef(factory, id, deps)
+        sojs.getDef(factory, id, deps)
     }
 
     var require = function(id, callback) {
@@ -282,12 +280,12 @@
             deps = id;
             id = SYNC_ID + get_uid();
         }
-        var mod = loader.getMod(id, deps, !caller);
+        var mod = sojs.getMod(id, deps, !caller);
         if (callback) {
-            loader.loadMod(mod, function(mod) {
+            sojs.loadMod(mod, function(mod) {
                 var args = [];
                 for (var i = 0, l = mod.deps.length; i < l; i++) {
-                    var depMod = loader.modMap[mod.deps[i]];
+                    var depMod = sojs.modMap[mod.deps[i]];
                     args.push(depMod.exports)
                 }
                 args.push(mod.exports);
@@ -295,7 +293,7 @@
             })
         } else {
             if( !caller && !mod.sync){
-                loader.loadMod(mod, EMPTY_FN)
+                sojs.loadMod(mod, EMPTY_FN)
             }else{
                return mod.exports !== EMPTY ? mod.exports : mod.onExec()
             }
@@ -303,9 +301,8 @@
     }
 
     require.config = function(pathMap){
-         bootPath = pathMap['base']
+        bootPath = pathMap['base']
     }
 
     global.require = require;
-    
 })(this)

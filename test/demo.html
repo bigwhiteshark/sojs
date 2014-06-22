@@ -10,9 +10,19 @@
 		base:'./'
 	})
 
-	define('mods/test', function(require, exports, module) {
-		//exports.a = dep;
-		var Dep = require('mods/dep');
+	define('mods/teacher',function(require,exports,module){
+		function Teacher(){
+
+		}
+
+		Teacher.prototype.teaching = function(name){
+			console.log(name)
+		}
+		module.exports = Teacher
+	})
+
+	define('mods/person', function(require, exports, module) {
+		var Teacher = require('mods/teacher');
 		function Person(){
 
 		}
@@ -21,14 +31,14 @@
 			console.log(a)
 		}
 
-		/*var test = new Dep();
-		test.say('fffff')*/
+		var t = new Teacher();
+		t.teaching('math course')
 
 		return Person
 	});
 	//debugger;
-	var test = require('mods/test');
-	console.log(test,'sssssssss')
+	var p = require('mods/person');
+	console.log(p)
 
 	/*sojs.use('mods/main',function(a){
 		console.log(a)

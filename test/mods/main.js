@@ -37,4 +37,8 @@ define(function(require,exports,module){
     	console.log(b);
 	});
     
+    var Person = require('mods/person');
+    var p = new Person;
+    p.output('I am person object')
+
 });
