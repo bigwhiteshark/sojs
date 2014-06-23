@@ -12,9 +12,9 @@ define(function(require,exports,module){
 	var str = require('mods/str');
 	console.log(str)
 
-	require('mods/util',function(o){
-		console.log(o.multify(3,5))
-	});
+/*	require('mods/util',function(a){
+		console.log(a.multify(3,5))
+	});*/
 	var util = require('mods/util');
 	console.log(util.multify(6,3))
 
@@ -26,7 +26,7 @@ define(function(require,exports,module){
     var sum = computer.add(5,4);
     printer.echo(sum)
 
-    require(['mods/util','mods/computer'],function(a,b){
+    /*require(['mods/util','mods/computer'],function(a,b){
     	console.log(a);
     	console.log(b);
 		console.log(a.multify(8,5))
@@ -35,7 +35,7 @@ define(function(require,exports,module){
 	require(['mods/str','mods/printer'],function(a,b){
     	console.log(a);
     	console.log(b);
-	});
+	});*/
     
     var Person = require('mods/person');
     var p = new Person;

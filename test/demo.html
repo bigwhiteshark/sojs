@@ -3,6 +3,7 @@
 <meta charset='utf-8'>
 <head>
 	<script type="text/javascript" src="../src/so.js"></script>
+	<script type="text/javascript" src="../src/so-text.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -52,8 +53,13 @@
 		require('mods/main');
 	}
 	init();*/
+	sojs.on('request',function(mod){
+		mod.tmpl = 'tmpl';
+		console.log(mod.uri + '   ' + mod.tmpl)
+	})
+	require('mods/main');
 
-	require('mods/main')
+	
 </script>
 </body>
 </html>

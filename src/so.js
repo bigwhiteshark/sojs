@@ -90,7 +90,7 @@
         });
         return handle
     }
-    p.trigger = function(type, args) {
+    p.emit = function(type, args) {
         var this_ = this;
         return reduce(get_values(get_handles(this, type)), function(prevVal, handle) {
             return bind(handle, this_, [args])
@@ -143,7 +143,7 @@
     p.onDefine = function(factory, id, deps) {
         this.factory = factory;
         this.deps = deps.concat(parse_deps(factory));
-        this.trigger('define', this)
+        this.emit('define', this)
     }
 
     p.onLoad = function() {
@@ -152,14 +152,14 @@
         }
         delete this.loading;
         delete this.entry;
-        this.trigger('load', this);
+        this.emit('load', this);
     }
 
     p.onExec = function(){        
         var f = this.factory;
         var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},this]) : f;
         ret && (this.exports = ret);        
-        this.trigger('exec', this); 
+        this.emit('exec', this); 
         return this.exports
     }
 
@@ -208,32 +208,35 @@
         } else {
             this.waiting = true;
             this.currentMod = mod;
-            if (is_sync(mod.uri) || mod.sync) {
-                this.getDef()
-            } else {
-                var elem = doc.createElement('script');
-                function onload() {
-                    elem.onload = elem.onerror = elem.onreadystatechange = null
-                    head.removeChild(elem)
-                    elem = null
-                }
-                if ('onload' in elem) {
-                    elem.onload = onload;
-                    elem.onerror = function() {
-                        onload()
-                    }
+            this.emit('request',mod);
+            if(!mod.requested){
+                if (is_sync(mod.uri) || mod.sync) {
+                    this.getDef()
                 } else {
-                    elem.onreadystatechange = function() {
-                        if (/loaded|complete/.test(elem.readyState)) {
+                    var elem = doc.createElement('script');
+                    function onload() {
+                        elem.onload = elem.onerror = elem.onreadystatechange = null
+                        head.removeChild(elem)
+                        elem = null
+                    }
+                    if ('onload' in elem) {
+                        elem.onload = onload;
+                        elem.onerror = function() {
                             onload()
                         }
+                    } else {
+                        elem.onreadystatechange = function() {
+                            if (/loaded|complete/.test(elem.readyState)) {
+                                onload()
+                            }
+                        }
                     }
+                    var url = bootPath + mod.uri;
+                    !new RegExp(EXT_JS+'$','i').test(url) && (url += EXT_JS); 
+                    elem.src = url;
+                    elem.charset = 'utf-8';
+                    head.appendChild(elem)
                 }
-                var url = bootPath + mod.uri;
-                !new RegExp(EXT_JS+'$','i').test(url) && (url += EXT_JS); 
-                elem.src = url;
-                elem.charset = 'utf-8';
-                head.appendChild(elem)
             }
         }
     }
@@ -260,7 +263,7 @@
         }
     }
 
-    var sojs = new ModLoader();
+    var sojs = global.sojs = new ModLoader();
     global.define = function(id, deps, factory) {
         var len = arguments.length;
         if (len == 1) {
@@ -280,7 +283,7 @@
             deps = id;
             id = SYNC_ID + get_uid();
         }
-        var mod = sojs.getMod(id, deps, !caller);
+        var mod = sojs.getMod(id, deps, !caller || callback);
         if (callback) {
             sojs.loadMod(mod, function(mod) {
                 var args = [];
@@ -301,7 +304,7 @@
     }
 
     require.config = function(pathMap){
-        bootPath = pathMap['base']
+        bootPath = pathMap.base
     }
 
     global.require = require;

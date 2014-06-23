@@ -1,4 +1,4 @@
 *.jar
 *.bak
-so.amd.js
-so.cmd.js
+so-amd.js
+so-cmd.js
