@@ -188,7 +188,7 @@
         mod.once('load', callback);
         if (!mod.loading) {
             mod.loading = true;
-            this.loadDef(mod, function() {
+            this.loadDefine(mod, function() {
                 var deps = mod.deps,
                     count = mod.deps.length;
                 if (!count) {
@@ -204,7 +204,7 @@
         }
     }
 
-    p.loadDef = function(uri, callback) {
+    p.loadDefine = function(uri, callback) {
         var mod = this.getMod(uri);
         mod.once('define', callback);
         if (this.waiting) {
@@ -215,7 +215,7 @@
             this.emit('request', mod);
             if (!mod.requested) {
                 if (is_sync(mod.uri) || mod.sync) {
-                    this.getDef()
+                    this.getDefine()
                 } else {
                     var elem = doc.createElement('script');
 
@@ -246,7 +246,7 @@
         }
     }
 
-    p.getDef = function(factory, id, deps) {
+    p.getDefine = function(factory, id, deps) {
         var mod = this.currentMod,
             deps = deps || [];
         delete this.currentMod;
@@ -265,7 +265,7 @@
         this.waiting = false;
         if (this.queues.length) {
             var mod = this.queues.shift();
-            this.loadDef(mod, EMPTY_FN)
+            this.loadDefine(mod, EMPTY_FN)
         }
     }
 
@@ -278,7 +278,7 @@
             factory = deps;
             is_array(id) ? deps = id : deps = null;
         }
-        sojs.getDef(factory, id, deps)
+        sojs.getDefine(factory, id, deps)
     }
 
     var require = function(id, callback) {

@@ -79,7 +79,7 @@
 		if (name) {
 			xhr(mod.uri, function(content) {
 				var content = plugins[name].exec(content)
-				sojs.getDef(content, mod.uri)
+				sojs.getDefine(content, mod.uri)
 			})
 			mod.requested = true
 		}
