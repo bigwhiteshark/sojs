@@ -5,13 +5,48 @@
  * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
+	var plugins = {};
+
+	function register(o) {
+		plugins[o.name] = o
+	}
+
+	register({
+		name: "text",
+		ext: [".tpl", ".html"],
+		exec: function(content) {
+			return jsEscape(content)
+		}
+	})
+
+	register({
+		name: "json",
+		ext: [".json"],
+		exec: function(content) {
+			return content
+		}
+	})
+
+	function isPlugin(name) {
+		return name && plugins.hasOwnProperty(name)
+	}
+
+	function getPluginName(ext) {
+		for (var k in plugins) {
+			if (isPlugin(k)) {
+				var exts = "," + plugins[k].ext.join(",") + ","
+				if (exts.indexOf("," + ext + ",") > -1) {
+					return k
+				}
+			}
+		}
+	}
+
 	function xhr(url, callback) {
 		var r = global.ActiveXObject ?
 			new global.ActiveXObject("Microsoft.XMLHTTP") :
 			new global.XMLHttpRequest()
-
 		r.open("GET", url, true)
-
 		r.onreadystatechange = function() {
 			if (r.readyState === 4) {
 				// Support local file
@@ -22,7 +57,6 @@
 				}
 			}
 		}
-
 		return r.send(null)
 	}
 
@@ -37,24 +71,17 @@
 			.replace(/[\u2029]/g, "\\u2029")
 	}
 
-	function globalEval(content) {
-		if (content && /\S/.test(content)) {
-			(global.execScript || function(content) {
-				(global.eval || eval).call(global, content)
-			})(content)
-		}
-	}
-
-	/*sojs.on("request", function(data) {
-		var name = uriCache[data.uri];
-
+	sojs.on("request", function(mod) {
+		var uri = mod.uri,
+			m = uri.match(/[^?]+(\.\w+)(?:\?|#|$)/);
+		if (!m) return;
+		var name = getPluginName(m[1]);
 		if (name) {
-			xhr(data.requestUri, function(content) {
-				plugins[name].exec(data.uri, content)
-				data.onRequest()
+			xhr(mod.uri, function(content) {
+				var content = plugins[name].exec(content)
+				sojs.getDef(content, mod.uri)
 			})
-
-			data.requested = true
+			mod.requested = true
 		}
-	})*/
+	})
 })(this);

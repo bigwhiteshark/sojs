@@ -231,7 +231,7 @@
                             }
                         }
                     }
-                    var url = bootPath + mod.uri;
+                    var url = (/^http:\/\//.test(mod.url) ? '' : bootPath) + mod.uri;
                     !new RegExp(EXT_JS+'$','i').test(url) && (url += EXT_JS); 
                     elem.src = url;
                     elem.charset = 'utf-8';

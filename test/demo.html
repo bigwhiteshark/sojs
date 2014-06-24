@@ -39,7 +39,7 @@
 	});
 	//debugger;
 	var p = require('mods/person');
-	console.log(p)
+	console.log(p);
 
 	/*sojs.use('mods/main',function(a){
 		console.log(a)
@@ -53,11 +53,13 @@
 		require('mods/main');
 	}
 	init();*/
-	sojs.on('request',function(mod){
+	/*sojs.on('request',function(mod){
 		mod.tmpl = 'tmpl';
 		console.log(mod.uri + '   ' + mod.tmpl)
-	})
+	})*/
+(function(){
 	require('mods/main');
+})()
 
 	
 </script>

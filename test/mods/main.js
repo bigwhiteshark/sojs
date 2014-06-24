@@ -39,6 +39,8 @@ define(function(require,exports,module){
     
     var Person = require('mods/person');
     var p = new Person;
-    p.output('I am person object')
+    p.output('I am person object');
+
+    //var tmpl = require('mods/tmpl.html');
 
 });
