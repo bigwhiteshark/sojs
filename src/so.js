@@ -13,7 +13,7 @@
         EXT_JS = '.js',
         doc = document,
         bootPath = get_script_path(),
-        head = doc.head || doc.getElementsByTagName("head")[0] ;
+        head = doc.head || doc.getElementsByTagName("head")[0];
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
@@ -58,6 +58,7 @@
     }
 
     var num = 0;
+
     function get_uid() {
         return ++num;
     }
@@ -115,7 +116,7 @@
     }
 
     function is_array(obj) {
-        return  obj instanceof Array
+        return obj instanceof Array
     }
 
     function parse_deps(factory) {
@@ -127,7 +128,7 @@
         return ret
     }
 
-    function is_sync(uri){
+    function is_sync(uri) {
         return new RegExp(SYNC_ID).test(uri)
     }
 
@@ -147,19 +148,21 @@
     }
 
     p.onLoad = function() {
-        if(this.entry){
-           this.onExec()
+        if (this.entry) {
+            this.onExec()
         }
         delete this.loading;
         delete this.entry;
         this.emit('load', this);
     }
 
-    p.onExec = function(){        
+    p.onExec = function() {
         var f = this.factory;
-        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},this]) : f;
-        ret && (this.exports = ret);        
-        this.emit('exec', this); 
+        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},
+            this
+        ]) : f;
+        ret && (this.exports = ret);
+        this.emit('exec', this);
         return this.exports
     }
 
@@ -179,14 +182,15 @@
         }
     }
 
-    p.loadMod = function(mod, callback,pMod) {
-        mod = this.getMod(mod,[],pMod && is_sync(pMod.uri));
+    p.loadMod = function(mod, callback, pMod) {
+        mod = this.getMod(mod, [], pMod && is_sync(pMod.uri));
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
             mod.loading = true;
             this.loadDef(mod, function() {
-                var deps = mod.deps, count = mod.deps.length;
+                var deps = mod.deps,
+                    count = mod.deps.length;
                 if (!count) {
                     mod.onLoad()
                 } else {
@@ -208,12 +212,13 @@
         } else {
             this.waiting = true;
             this.currentMod = mod;
-            this.emit('request',mod);
-            if(!mod.requested){
+            this.emit('request', mod);
+            if (!mod.requested) {
                 if (is_sync(mod.uri) || mod.sync) {
                     this.getDef()
                 } else {
                     var elem = doc.createElement('script');
+
                     function onload() {
                         elem.onload = elem.onerror = elem.onreadystatechange = null
                         head.removeChild(elem)
@@ -232,7 +237,7 @@
                         }
                     }
                     var url = (/^http:\/\//.test(mod.url) ? '' : bootPath) + mod.uri;
-                    !new RegExp(EXT_JS+'$','i').test(url) && (url += EXT_JS); 
+                    !new RegExp(EXT_JS + '$', 'i').test(url) && (url += EXT_JS);
                     elem.src = url;
                     elem.charset = 'utf-8';
                     head.appendChild(elem)
@@ -242,15 +247,16 @@
     }
 
     p.getDef = function(factory, id, deps) {
-        var mod = this.currentMod,deps = deps || [];
+        var mod = this.currentMod,
+            deps = deps || [];
         delete this.currentMod;
-        if(mod){
+        if (mod) {
             mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
             this.resume()
-        }else {
+        } else {
             mod = this.getMod(id);
             mod.sync = true;
-            mod.onDefine(factory,id, deps);
+            mod.onDefine(factory, id, deps);
             this.loadMod(mod, EMPTY_FN);
         }
     }
@@ -277,7 +283,7 @@
 
     var require = function(id, callback) {
         var caller = arguments.callee.caller;
-            caller = caller && caller.caller;
+        caller = caller && caller.caller;
         var deps;
         if (is_array(id)) {
             deps = id;
@@ -292,18 +298,18 @@
                     args.push(depMod.exports)
                 }
                 args.push(mod.exports);
-                bind(callback, mod,  args);
+                bind(callback, mod, args);
             })
         } else {
-            if( !caller && !mod.sync){
+            if (!caller && !mod.sync) {
                 sojs.loadMod(mod, EMPTY_FN)
-            }else{
-               return mod.exports !== EMPTY ? mod.exports : mod.onExec()
+            } else {
+                return mod.exports !== EMPTY ? mod.exports : mod.onExec()
             }
         }
     }
 
-    require.config = function(pathMap){
+    require.config = function(pathMap) {
         bootPath = pathMap.base
     }
 
