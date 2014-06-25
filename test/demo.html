@@ -57,10 +57,21 @@
 		mod.tmpl = 'tmpl';
 		console.log(mod.uri + '   ' + mod.tmpl)
 	})*/
-(function(){
-	require('mods/main');
-})()
+function init(){
 
+	(function(){
+		require('mods/main');
+	})()
+
+}
+init();
+
+/*
+require('mods/main');*/
+
+/*(function(){
+	require('mods/main');
+})()*/
 	
 </script>
 </body>

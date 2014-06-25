@@ -10,7 +10,7 @@
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         EMPTY_FN = new Function,
         SYNC_ID = '__sync__',
-        EXT_JS = '.js',
+        JS_EXT = '.js',
         doc = document,
         bootPath = get_script_path(),
         head = doc.head || doc.getElementsByTagName("head")[0];
@@ -21,10 +21,8 @@
 
     function for_in(o, fn) {
         for (var k in o)
-            if (has(o, k)) {
-                if (fn(o[k], k) === false)
-                    return false
-            }
+            if (has(o, k) && fn(o[k], k) === false)
+                return false
     }
 
     function strip_comments(code) {
@@ -58,7 +56,6 @@
     }
 
     var num = 0;
-
     function get_uid() {
         return ++num;
     }
@@ -148,9 +145,7 @@
     }
 
     p.onLoad = function() {
-        if (this.entry) {
-            this.onExec()
-        }
+        this.entry && this.onExec();
         delete this.loading;
         delete this.entry;
         this.emit('load', this);
@@ -158,9 +153,7 @@
 
     p.onExec = function() {
         var f = this.factory;
-        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},
-            this
-        ]) : f;
+        var ret = (typeof f == 'function') ? bind(f, this, [require, this.exports = {},this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         return this.exports
@@ -174,12 +167,7 @@
 
     var p = ModLoader.prototype;
     p.getMod = function(mod, deps, entry) {
-        if (mod instanceof Mod) {
-            this.modMap[mod.uri] = mod;
-            return mod
-        } else {
-            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry))
-        }
+        return mod instanceof Mod && mod || this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry))
     }
 
     p.loadMod = function(mod, callback, pMod) {
@@ -218,10 +206,9 @@
                     this.getDefine()
                 } else {
                     var elem = doc.createElement('script');
-
                     function onload() {
                         elem.onload = elem.onerror = elem.onreadystatechange = null
-                        head.removeChild(elem)
+                        head.removeChild(elem);
                         elem = null
                     }
                     if ('onload' in elem) {
@@ -237,7 +224,7 @@
                         }
                     }
                     var url = (/^http:\/\//.test(mod.url) ? '' : bootPath) + mod.uri;
-                    !new RegExp(EXT_JS + '$', 'i').test(url) && (url += EXT_JS);
+                    !new RegExp(JS_EXT + '$', 'i').test(url) && (url += JS_EXT);
                     elem.src = url;
                     elem.charset = 'utf-8';
                     head.appendChild(elem)
@@ -282,14 +269,14 @@
     }
 
     var require = function(id, callback) {
-        var caller = arguments.callee.caller;
-        caller = caller && caller.caller;
-        var deps;
+        var caller = arguments.callee.caller,
+            caller = caller && caller.caller,
+            entry = caller != bind,deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + get_uid();
         }
-        var mod = sojs.getMod(id, deps, !caller || callback);
+        var mod = sojs.getMod(id, deps, entry || callback);
         if (callback) {
             sojs.loadMod(mod, function(mod) {
                 var args = [];
@@ -301,7 +288,7 @@
                 bind(callback, mod, args);
             })
         } else {
-            if (!caller && !mod.sync) {
+            if (entry && !mod.sync) {
                 sojs.loadMod(mod, EMPTY_FN)
             } else {
                 return mod.exports !== EMPTY ? mod.exports : mod.onExec()

@@ -5,40 +5,12 @@
  * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
-    var plugins = {};
-
-    function register(o) {
-        plugins[o.name] = o
-    }
-
-    register({
-        name: "text",
-        ext: [".tpl", ".html"],
-        exec: function(content) {
+    var plugins = {
+        '.tpl,.html':function(content){
             return jsEscape(content)
-        }
-    })
-
-    register({
-        name: "json",
-        ext: [".json"],
-        exec: function(content) {
+        },
+        '.json':function(content){
             return content
-        }
-    })
-
-    function isPlugin(name) {
-        return name && plugins.hasOwnProperty(name)
-    }
-
-    function getPluginName(ext) {
-        for (var k in plugins) {
-            if (isPlugin(k)) {
-                var exts = "," + plugins[k].ext.join(",") + ","
-                if (exts.indexOf("," + ext + ",") > -1) {
-                    return k
-                }
-            }
         }
     }
 
@@ -49,7 +21,6 @@
         r.open("GET", url, true)
         r.onreadystatechange = function() {
             if (r.readyState === 4) {
-                // Support local file
                 if (r.status > 399 && r.status < 600) {
                     throw new Error("Could not load: " + url + ", status = " + r.status)
                 } else {
@@ -72,16 +43,23 @@
     }
 
     sojs.on("request", function(mod) {
-        var uri = mod.uri,
+        var uri = mod.uri,exec,
             m = uri.match(/[^?]+(\.\w+)(?:\?|#|$)/);
-        if (!m) return;
-        var name = getPluginName(m[1]);
-        if (name) {
-            xhr(uri, function(content) {
-                var content = plugins[name].exec(content)
-                sojs.getDefine(content, uri)
-            })
-            mod.requested = true
+        if (m){
+            for(var k in plugins){
+                var exts = "," + k + ",";
+                if (exts.indexOf("," + m[1] + ",") > -1) {
+                    exec = plugins[k];
+                    break;
+                }
+            }
+            if (exec) {
+                mod.requested = true;
+                xhr(uri, function(content) {
+                    var factory = exec(content);
+                    sojs.getDefine(factory, uri)
+                })
+            }
         }
     })
 })(this);

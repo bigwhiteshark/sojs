@@ -12,7 +12,7 @@ define(function(require,exports,module){
 	var str = require('mods/str');
 	console.log(str)
 
-/*	require('mods/util',function(a){
+	/*require('mods/util',function(a){
 		console.log(a.multify(3,5))
 	});*/
 	var util = require('mods/util');
@@ -41,6 +41,9 @@ define(function(require,exports,module){
     var p = new Person;
     p.output('I am person object');
 
-    //var tmpl = require('mods/tmpl.html');
+    var html = require('mods/tmpl.html');
+    console.log(html)
+    var tpl = require('mods/tmpl.tpl');
+    console.log(tpl)
 
 });
