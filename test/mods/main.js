@@ -41,9 +41,12 @@ define(function(require,exports,module){
     var p = new Person;
     p.output('I am person object');
 
-    var html = require('mods/tmpl.html');
+
+    var Person = require('mods/point');
+
+   /* var html = require('mods/tmpl.html');
     console.log(html)
     var tpl = require('mods/tmpl.tpl');
     console.log(tpl)
-
+*/
 });

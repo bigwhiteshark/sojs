@@ -1,4 +1,4 @@
-define(function(require,exports,module){
+define(function(require){
 	function Point(){
 	}
 	var p = Point.prototype;
@@ -6,5 +6,5 @@ define(function(require,exports,module){
 		console.log(msg)
 	}
 	console.log('Point mods')
-	module.exports = Point
+	return Point
 });
