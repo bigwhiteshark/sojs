@@ -1,12 +1,24 @@
 #  sojs
 sojs,so open, so fast, so simple。so,编程就是如此简单。
 
+sojs提供cdn访问地址:
+
+		http://s0.qhimg.com/!2222fafb/so.js
+		http://s1.qhimg.com/!2222fafb/so.js
+		http://s2.qhimg.com/!2222fafb/so.js
+
+		…………………
+
+		http://s8.qhimg.com/!2222fafb/so.js
+		http://s9.qhimg.com/!2222fafb/so.js
+
 ## 简介
 一个极简极小的符合AMD规范按需模块加载器，特点是小巧、简洁、轻量级，目的使开发者能够快速上手，无学习成本，按模块开发。
 
 sosj是一个符合AMD规范，目的在于希望开发者能够按模块开发，像使用java、c++、python、php等语言一样，有模块的概念，可以导入模块。
 
 ## 使用
+
 模块系统的基础路径即 base 的默认值，与 so.js 的访问路径相关：
 
 	如果 so.js 的访问路径是：
@@ -20,7 +32,6 @@ sosj是一个符合AMD规范，目的在于希望开发者能够按模块开发�
 	sojs.config({
 	  base: './'
 	});
-
 
 **define** (factory)
 
