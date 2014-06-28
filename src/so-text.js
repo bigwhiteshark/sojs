@@ -15,9 +15,9 @@
     }
 
     function xhr(url, callback) {
-        var r = global.ActiveXObject ?
-            new global.ActiveXObject("Microsoft.XMLHTTP") :
-            new global.XMLHttpRequest()
+        var r = global.XMLHttpRequest ?
+            new global.XMLHttpRequest() :
+            new global.ActiveXObject("Microsoft.XMLHTTP")
         r.open("GET", url, true)
         r.onreadystatechange = function() {
             if (r.readyState === 4) {
