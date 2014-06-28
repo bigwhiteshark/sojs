@@ -1,7 +1,7 @@
 #  sojs
 sojs,so open, so fast, so simple。so,编程就是如此简单。
 
-sojs提供cdn访问地址:
+sojs提供cdn引用地址:
 
 		http://s0.qhimg.com/!2222fafb/so.js
 		http://s1.qhimg.com/!2222fafb/so.js
