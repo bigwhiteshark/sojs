@@ -2,8 +2,7 @@
 <html>
 <meta charset='utf-8'>
 <head>
-	<script type="text/javascript" src="../src/so.js"></script>
-	<script type="text/javascript" src="../src/so-text.js"></script>
+	<script type="text/javascript" src="http://s0.qhimg.com/!2222fafb/so.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -11,6 +10,7 @@
 		base:'./'
 	})
 
+	//inline mods,only sync mode
 	define('mods/teacher',function(require,exports,module){
 		function Teacher(){
 
@@ -57,21 +57,24 @@
 		mod.tmpl = 'tmpl';
 		console.log(mod.uri + '   ' + mod.tmpl)
 	})*/
-function init(){
+
+/*function init(){
 
 	(function(){
 		require('mods/main');
 	})()
 
 }
-init();
-
-/*
-require('mods/main');*/
+init();*/
 
 /*(function(){
 	require('mods/main');
 })()*/
+
+
+require('mods/main');
+
+
 	
 </script>
 </body>
