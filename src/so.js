@@ -12,8 +12,7 @@
         SYNC_ID = '__sync__',
         JS_EXT = '.js',
         doc = document,
-        bootPath = get_script_path(),
-        head = doc.head || doc.getElementsByTagName("head")[0];
+        bootPath = get_script_path();
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
@@ -106,9 +105,9 @@
     }
 
     function get_script_path() {
-        var scripts = get_tags('script');
+        var scripts = doc.scripts || get_tags('script');
         var url = scripts[scripts.length - 1].getAttribute('src');
-        var result = url.match(PATH_RE);
+        var result = url && url.match(PATH_RE);
         return result ? result[0] : './'
     }
 
@@ -205,7 +204,8 @@
                 if (is_sync(mod.uri) || mod.sync) {
                     this.getDefine()
                 } else {
-                    var elem = doc.createElement('script');
+                    var elem = doc.createElement('script'),
+                        head = doc.head || get_tags("head")[0];
                     function onload() {
                         elem.onload = elem.onerror = elem.onreadystatechange = null
                         head.removeChild(elem);
