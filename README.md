@@ -17,7 +17,7 @@ sosj是一个符合AMD规范，目的在于希望开发者能够按模块开发�
 
 也可以手工配置 base 路径：
 
-	require.config({
+	sojs.config({
 	  base: './'
 	});
 

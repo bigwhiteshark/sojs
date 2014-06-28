@@ -30,9 +30,9 @@
         return code.replace(reComment, '');
     }
 
-    function bind(fn, thisp, vargs) {
+    function bind(fn, context, vargs) {
         try {
-            return fn.apply(thisp, vargs || [])
+            return fn.apply(context, vargs || [])
         } catch (ex) {
             setTimeout(function() {
                 throw ex
@@ -238,21 +238,17 @@
             deps = deps || [];
         delete this.currentMod;
         if (mod) {
-            mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
-            this.resume()
+           mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
+           this.waiting = false;
+           if (this.queues.length) {
+                var mod = this.queues.shift();
+                this.loadDefine(mod, EMPTY_FN)
+           }
         } else {
             mod = this.getMod(id);
             mod.sync = true;
             mod.onDefine(factory, id, deps);
             this.loadMod(mod, EMPTY_FN);
-        }
-    }
-
-    p.resume = function() {
-        this.waiting = false;
-        if (this.queues.length) {
-            var mod = this.queues.shift();
-            this.loadDefine(mod, EMPTY_FN)
         }
     }
 
@@ -268,7 +264,7 @@
         sojs.getDefine(factory, id, deps)
     }
 
-    var require = function(id, callback) {
+    global.require = function(id, callback) {
         var caller = arguments.callee.caller,
             caller = caller && caller.caller,
             entry = caller != bind,deps;
@@ -296,9 +292,7 @@
         }
     }
 
-    require.config = function(pathMap) {
+    sojs.config = function(pathMap) {
         bootPath = pathMap.base
     }
-
-    global.require = require;
 })(this)
