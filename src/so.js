@@ -7,12 +7,17 @@
 (function(global) {
     var EMPTY = {},
         PATH_RE = /[^?#]*\//,
+        PARENT_DIR_RE = /([^\/]*)\/\.\.\/?/,
+        DOT_RE = /\/\.\//g,
+        MULTI_SLASH_RE = /([^:/])\/+\//g,
+        DOMAIN_RE = /^.*?\/\/.*?\//,
+        ABSOLUTE_RE = /^\/\/.|:\//,
         DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
         EMPTY_FN = new Function,
         SYNC_ID = '__sync__',
         JS_EXT = '.js',
         doc = document,
-        bootPath = get_script_path();
+        unique_num = 0;
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key)
@@ -54,9 +59,77 @@
         return ret
     }
 
-    var num = 0;
     function get_uid() {
-        return ++num;
+        return ++unique_num;
+    }
+
+    function inherits(s, b) {
+        var f = function() {};
+        f.prototype = b.prototype;
+        s.prototype = new f
+    }
+
+    function get_tags(name, root) {
+        return (root || doc).getElementsByTagName(name)
+    }
+
+    function get_script_src() {
+        var scripts = doc.scripts || get_tags('script');
+        return scripts[scripts.length - 1].getAttribute('src') || '';
+    }
+
+    function is_array(obj) {
+        return obj instanceof Array
+    }
+
+    function parse_deps(factory) {
+        var code = strip_comments(factory + ''),
+            match, ret = [];
+        while (match = DEPS_RE.exec(code)) {
+            match[1] && ret.push(match[1])
+        }
+        return ret
+    }
+
+    function is_sync(id) {
+        return new RegExp(SYNC_ID).test(id)
+    }
+
+    function dirname(path) {
+        var m = path.match(PATH_RE);
+        return m ? m[0] : ''
+    }
+
+    function normalize(path) {
+        var last = path.length - 1;
+        var lastC = path.charAt(last);
+        if (lastC === "#") {
+            return path.substring(0, last)
+        }
+        return (path.substring(last - 2) === JS_EXT || path.indexOf("?") > 0 || lastC === "/") ? path : path + JS_EXT
+    }
+
+    function canonical(path) {
+        path = normalize(path);
+        path = path.replace(DOT_RE, '/');
+        path = path.replace(MULTI_SLASH_RE, "$1/");
+        while (PARENT_DIR_RE.test(path)) {
+            path = path.replace(PARENT_DIR_RE, "");
+        }
+        var firstC = path.charAt(0);
+        if (!ABSOLUTE_RE.test(path)) {
+            if (firstC === '.') {
+                path = cfg.cwd + path;
+            } else if (firstC === '/') {
+                path = cfg.domain + path.substring(1)
+            } else {
+                path = cfg.base + path
+            }
+        }
+        if (path.indexOf("//") === 0) {
+            path = location.protocol + path
+        }
+        return path;
     }
 
     function EventHandle(handles, guid) {
@@ -94,42 +167,9 @@
         }, true)
     }
 
-    function inherits(s, b) {
-        var f = function() {};
-        f.prototype = b.prototype;
-        s.prototype = new f
-    }
-
-    function get_tags(name, root) {
-        return (root || doc).getElementsByTagName(name)
-    }
-
-    function get_script_path() {
-        var scripts = doc.scripts || get_tags('script');
-        var url = scripts[scripts.length - 1].getAttribute('src');
-        var result = url && url.match(PATH_RE);
-        return result ? result[0] : './'
-    }
-
-    function is_array(obj) {
-        return obj instanceof Array
-    }
-
-    function parse_deps(factory) {
-        var code = strip_comments(factory + ''),
-            match, ret = [];
-        while (match = DEPS_RE.exec(code)) {
-            match[1] && ret.push(match[1])
-        }
-        return ret
-    }
-
-    function is_sync(uri) {
-        return new RegExp(SYNC_ID).test(uri)
-    }
-
-    function Mod(uri, deps, entry) {
-        this.uri = uri;
+    function Mod(id, deps, entry) {
+        this.id = id;
+        this.url = canonical(id);
         this.deps = deps || [];
         this.exports = EMPTY;
         this.entry = entry
@@ -145,16 +185,19 @@
 
     p.onLoad = function() {
         this.entry && this.onExec();
-        delete this.loading;
-        delete this.entry;
         this.emit('load', this);
     }
 
     p.onExec = function() {
         var f = this.factory;
-        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {},this]) : f;
+        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
+        delete this.entry;
+        delete this.loading;
+        delete this.handles;
+        delete this.factory;
+        delete this.deps;
         return this.exports
     }
 
@@ -163,14 +206,14 @@
         this.queues = [];
     }
     inherits(ModLoader, EventTarget);
-
     var p = ModLoader.prototype;
+
     p.getMod = function(mod, deps, entry) {
         return mod instanceof Mod && mod || this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry))
     }
 
     p.loadMod = function(mod, callback, pMod) {
-        mod = this.getMod(mod, [], pMod && is_sync(pMod.uri));
+        mod = this.getMod(mod, [], pMod && is_sync(pMod.id));
         var this_ = this;
         mod.once('load', callback);
         if (!mod.loading) {
@@ -191,21 +234,21 @@
         }
     }
 
-    p.loadDefine = function(uri, callback) {
-        var mod = this.getMod(uri);
+    p.loadDefine = function(mod, callback) {
         mod.once('define', callback);
         if (this.waiting) {
-            this.queues.push(uri);
+            this.queues.push(mod);
         } else {
             this.waiting = true;
             this.currentMod = mod;
             this.emit('request', mod);
             if (!mod.requested) {
-                if (is_sync(mod.uri) || mod.sync) {
+                if (is_sync(mod.id) || mod.sync) {
                     this.getDefine()
                 } else {
                     var elem = doc.createElement('script'),
                         head = doc.head || get_tags("head")[0];
+
                     function onload() {
                         elem.onload = elem.onerror = elem.onreadystatechange = null
                         head.removeChild(elem);
@@ -223,9 +266,7 @@
                             }
                         }
                     }
-                    var url = (/^http:\/\//.test(mod.url) ? '' : bootPath) + mod.uri;
-                    !new RegExp(JS_EXT + '$', 'i').test(url) && (url += JS_EXT);
-                    elem.src = url;
+                    elem.src = mod.url;
                     elem.charset = 'utf-8';
                     head.appendChild(elem)
                 }
@@ -238,12 +279,12 @@
             deps = deps || [];
         delete this.currentMod;
         if (mod) {
-           mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
-           this.waiting = false;
-           if (this.queues.length) {
+            mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
+            this.waiting = false;
+            if (this.queues.length) {
                 var mod = this.queues.shift();
                 this.loadDefine(mod, EMPTY_FN)
-           }
+            }
         } else {
             mod = this.getMod(id);
             mod.sync = true;
@@ -251,8 +292,14 @@
             this.loadMod(mod, EMPTY_FN);
         }
     }
+    var sojs = global.sojs = new ModLoader(),
+        cfg = EMPTY,
+        cwd = dirname(location.href),
+        m = cwd.match(DOMAIN_RE);
+    cfg.dir = cfg.base = (dirname(get_script_src()) || cwd),
+    cfg.cwd = cwd,
+    cfg.domain = m ? m[0] : '';
 
-    var sojs = global.sojs = new ModLoader();
     global.define = function(id, deps, factory) {
         var len = arguments.length;
         if (len == 1) {
@@ -267,7 +314,8 @@
     global.require = function(id, callback) {
         var caller = arguments.callee.caller,
             caller = caller && caller.caller,
-            entry = caller != bind,deps;
+            entry = caller != bind,
+            deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + get_uid();
@@ -293,6 +341,6 @@
     }
 
     sojs.config = function(pathMap) {
-        bootPath = pathMap.base
+        cfg.base = pathMap.base
     }
 })(this)
