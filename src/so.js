@@ -206,6 +206,7 @@
 
     p.onDefine = function(factory, id, deps) {
         this.factory = factory;
+        if(!deps) debugger;
         this.deps = deps.concat(parse_deps(factory));
         this.emit('define', this)
     }
@@ -225,6 +226,7 @@
         delete this.handles;
         delete this.factory;
         delete this.deps;
+        delete this.sync;
         return this.exports
     }
 
@@ -284,7 +286,7 @@
             deps = deps || [];
         delete this.currentMod;
         if (mod) {
-            mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
+            mod.onDefine(factory || mod.factory, id, mod.deps || []);
             this.runing = false;
             if (this.queues.length) {
                 var mod = this.queues.shift();
