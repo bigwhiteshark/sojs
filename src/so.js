@@ -193,9 +193,10 @@
         }, true)
     }
 
-    function Mod(id, deps, entry) {
+    function Mod(id, deps, entry, sync) {
         this.id = id;
-        this.url = canonical(id);
+        this.sync = sync;
+        this.url = !sync ? canonical(id) : '';
         this.deps = deps || [];
         this.exports = EMPTY;
         this.entry = entry
@@ -234,8 +235,8 @@
     inherits(ModLoader, EventTarget);
     var p = ModLoader.prototype;
 
-    p.getMod = function(mod, deps, entry) {
-        return mod instanceof Mod && mod || this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry))
+    p.getMod = function(mod, deps, entry, sync) {
+        return mod instanceof Mod && mod || this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry, sync))
     }
 
     p.loadMod = function(mod, callback, pMod) {
@@ -269,7 +270,7 @@
             this.currentMod = mod;
             this.emit('request', mod);
             if (!mod.requested) {
-                if (is_sync(mod.id) || mod.sync) {
+                if (is_sync(mod.id) || !mod.url) {
                     this.getDefine()
                 } else {
                     load_script(mod.url)
@@ -290,8 +291,7 @@
                 this.loadDefine(mod, EMPTY_FN)
             }
         } else {
-            mod = this.getMod(id);
-            mod.sync = true;
+            mod = this.getMod(id,[],null,true);
             mod.onDefine(factory, id, deps);
             this.loadMod(mod, EMPTY_FN);
         }
