@@ -132,6 +132,32 @@
         return path;
     }
 
+    function load_script(url){
+        var elem = doc.createElement('script'),
+            head = doc.head || get_tags("head")[0];
+
+        function onload() {
+            elem.onload = elem.onerror = elem.onreadystatechange = null
+            head.removeChild(elem);
+            elem = null
+        }
+        if ('onload' in elem) {
+            elem.onload = onload;
+            elem.onerror = function() {
+                onload()
+            }
+        } else {
+            elem.onreadystatechange = function() {
+                if (/loaded|complete/.test(elem.readyState)) {
+                    onload()
+                }
+            }
+        }
+        elem.src = url;
+        elem.charset = 'utf-8';
+        head.appendChild(elem)
+    }
+
     function EventHandle(handles, guid) {
         this.handles = handles;
         this.guid = guid
@@ -236,39 +262,17 @@
 
     p.loadDefine = function(mod, callback) {
         mod.once('define', callback);
-        if (this.waiting) {
+        if (this.runing) {
             this.queues.push(mod);
         } else {
-            this.waiting = true;
+            this.runing = true;
             this.currentMod = mod;
             this.emit('request', mod);
             if (!mod.requested) {
                 if (is_sync(mod.id) || mod.sync) {
                     this.getDefine()
                 } else {
-                    var elem = doc.createElement('script'),
-                        head = doc.head || get_tags("head")[0];
-
-                    function onload() {
-                        elem.onload = elem.onerror = elem.onreadystatechange = null
-                        head.removeChild(elem);
-                        elem = null
-                    }
-                    if ('onload' in elem) {
-                        elem.onload = onload;
-                        elem.onerror = function() {
-                            onload()
-                        }
-                    } else {
-                        elem.onreadystatechange = function() {
-                            if (/loaded|complete/.test(elem.readyState)) {
-                                onload()
-                            }
-                        }
-                    }
-                    elem.src = mod.url;
-                    elem.charset = 'utf-8';
-                    head.appendChild(elem)
+                    load_script(mod.url)
                 }
             }
         }
@@ -280,7 +284,7 @@
         delete this.currentMod;
         if (mod) {
             mod.onDefine(factory || mod.factory, id, mod.sync ? deps : mod.deps);
-            this.waiting = false;
+            this.runing = false;
             if (this.queues.length) {
                 var mod = this.queues.shift();
                 this.loadDefine(mod, EMPTY_FN)
