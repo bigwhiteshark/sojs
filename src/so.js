@@ -48,21 +48,6 @@
         }
     }
 
-    function reduce(array, fn, value) {
-        for (var i = 0; i < array.length; i++) {
-            value = fn(value, array[i], i, array)
-        }
-        return value
-    }
-
-    function get_values(obj) {
-        var ret = [];
-        for_in(obj, function(value) {
-            ret.push(value);
-        });
-        return ret
-    }
-
     function get_uid() {
         return ++unique_num;
     }
@@ -110,8 +95,37 @@
 
     function canonical(path) {
         path = normalize(path);
+        path = path.replace(DOT_RE, '/');
+        path = path.replace(MULTI_SLASH_RE, "$1/");
+        while (PARENT_DIR_RE.test(path)) {
+            path = path.replace(PARENT_DIR_RE, "");
+        }
+        var firstC = path.charAt(0);
+        if (!ABSOLUTE_RE.test(path)) {
+            if (firstC === '.') {
+                path = cfg.cwd + path;
+            } else if (firstC === '/') {
+                path = cfg.domain + path.substring(1)
+            } else {
+                path = cfg.base + path
+            }
+        }
+        if (path.indexOf("//") === 0) {
+            path = location.protocol + path
+        }
         return path;
     }
+
+    function unique(arr){
+        var ret = [], o = {};
+        for(var i = 0, val; val = arr[i++];){
+            if (!o[val]){
+                ret.push(val);
+                o[val] = 1
+            }
+        }
+        return ret
+    }    
 
     function load_script(url, id) {
         var elem = doc.createElement('script');
@@ -142,7 +156,7 @@
     }
 
     function get_current_script() {
-        if (doc.currentScript) { //firefox 4+
+        if (doc.currentScript) { //firefox 4+,chrome29+
             return doc.currentScript;
         }
         // ref: https://github.com/samyk/jiagra/blob/master/jiagra.js
@@ -168,47 +182,60 @@
         }
     }
 
-    function EventHandle(handles, guid) {
-        this.handles = handles;
-        this.guid = guid
-    }
-    var p = EventHandle.prototype;
-    p.dispose = function() {
-        delete this.handles[this.guid]
-    }
-
-    function get_handles(target, type) {
-        var handles;
-        return (handles = target.handles || (target.handles = {})) && (handles[type] || (handles[type] = {}))
+    function index_of(arr, val) {
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i] == val) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    function EventTarget() {}
+    function EventTarget() {
+        this._listeners = {}
+    };
     var p = EventTarget.prototype;
-    p.on = function(type, handle) {
-        var handles = get_handles(this, type);
-        var guid = get_uid();
-        handles[guid] = handle;
-        return new EventHandle(handles, guid)
-    }
-    p.once = function(type, func) {
-        var handle = this.on(type, function() {
-            return func.apply(this, arguments), handle.dispose()
+    p.on = function(type, listener) {
+        var listeners = this._listeners || (this._listeners = {});
+        listeners[type] || (listeners[type] = []);
+        if (index_of(listeners[type], listener) == -1) {
+            listeners[type].push(listener);
+        }
+        return listener;
+    };
+
+    p.once = function(type, listener) {
+        var self = this;
+        var lnr = this.on(type, function() {
+            listener.apply(this, arguments), self.off(type, lnr)
         });
-        return handle
-    }
-    p.emit = function(type, args) {
-        var this_ = this;
-        return reduce(get_values(get_handles(this, type)), function(prevVal, handle) {
-            return bind(handle, this_, [args])
-        }, true)
     }
 
-    function Mod(id, deps, entry, sync) {
+    p.emit = function(type) {
+        if (!this._listeners) return;
+        var listeners = this._listeners[type];
+        var args = Array.prototype.slice.call(arguments, 1);
+        for (var i = 0, len = listeners && listeners.length; i < len; i++) {
+            listeners[i].apply(this, args);
+        }
+    };
+
+    p.off = function(type, listener) {
+        if (!this._listeners) return;
+        var listeners = this._listeners[type];
+        if (listeners) {
+            var index = index_of(listeners, listener);
+            index !== -1 && listeners.splice(index, 1);
+        }
+    };
+
+    function Mod(id, deps, entry, sync, pmod) {
         this.id = id;
         this.sync = sync;
-        this.url = !sync ? canonical(id) : '';
+        this.url = canonical(id);
         this.deps = deps || [];
         this.exports = EMPTY;
+        this.pmod = pmod;
         this.entry = entry
     }
     inherits(Mod, EventTarget);
@@ -216,44 +243,52 @@
 
     p.onDefine = function(factory, id, deps) {
         this.factory = factory;
-        this.deps = deps.concat(parse_deps(factory));
+        this.deps = unique(deps.concat(parse_deps(factory)));
         this.emit('define', this)
     }
 
     p.onLoad = function() {
-        this.entry && this.onExec();
+        this.entry && this.onExec();//if entry executed immediately
         this.emit('load', this);
     }
 
     p.onExec = function() {
         var f = this.factory;
+        require.pid = this.id; //saved last mod's id to require relative mod.
         var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
-        delete this.handles;
         delete this.factory;
-        delete this.deps;
         delete this.sync;
+        delete this.pmod;
         return this.exports
     }
 
     function ModLoader() {
         this.modMap = {};
-        this.queues = [];
     }
     inherits(ModLoader, EventTarget);
     var p = ModLoader.prototype;
 
-    p.getMod = function(mod, deps, entry, sync) {
-        return mod instanceof Mod && mod || this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry, sync))
+    p.getMod = function(mod, deps, entry, sync, pmod) {
+        if(mod instanceof Mod){
+            return mod
+        }else{
+            var firstC = mod.charAt(0), //relative path to id
+                name = mod.slice(2);
+            if(firstC === '.'){ //if relative mod, get valid path
+                mod = dirname(pmod ? pmod.id : require.pid) + name;
+            }
+            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry, sync, pmod))
+        }
     }
 
-    p.loadMod = function(mod, callback, pMod) {
-        mod = this.getMod(mod, [], pMod && is_sync(pMod.id));
+    p.loadMod = function(mod, callback, pmod) {
+        mod = this.getMod(mod, [], pmod && is_sync(pmod.id),null,pmod);
         var this_ = this;
         mod.once('load', callback);
-        this.loadDefine(mod, function() {
+        this.loadDefine(mod, function() { //recursive to parse mod dependency
             var deps = mod.deps,
                 count = deps && deps.length;
             if (!count) {
@@ -269,13 +304,16 @@
     }
 
     p.loadDefine = function(mod, callback) {
+        if (mod.exports !== EMPTY) { //If the mod is loaded is returned
+            return callback()
+        }
         mod.once('define', callback);
         this.emit('request', mod);
         if (!mod.requested) {
-            if (is_sync(mod.id) || !mod.url) {
-                this.getDefine()
+            if (is_sync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
+                this.getDefine(mod.factory,mod.id,mod.deps)
             } else {
-                load_script(mod.url,mod.id)
+               load_script(mod.url,mod.id)
             }
         }
     }
@@ -285,9 +323,7 @@
         var script = get_current_script();
         var id = id || script.id;
         var mod = this.modMap[id];
-        if (!mod) {
-            mod = this.getMod(id, deps, null, true);
-        }
+        !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
         mod.onDefine(factory, id, deps);
     }
     var sojs = global.sojs = new ModLoader(),
@@ -313,14 +349,13 @@
     global.require = function(id, callback) {
         var caller = arguments.callee.caller,
             caller = caller && caller.caller,
-            entry = caller != bind,
-            deps;
+            entry = caller != bind,deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + get_uid();
         }
         var mod = sojs.getMod(id, deps, entry || callback);
-        if (callback) {
+        if (callback) {//async require
             sojs.loadMod(mod, function(mod) {
                 var args = [];
                 for (var i = 0, l = mod.deps.length; i < l; i++) {

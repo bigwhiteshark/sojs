@@ -52,9 +52,9 @@ function resolveUrl(url) {
 console.log(resolveUrl('./a/b/./c/./d'));
 console.log(resolveUrl('a/b/./c/./d?v=13&test=112#ee'));*/
 
-
 	//inline mods,only sync mode
 	define('mods/teacher',function(require,exports,module){
+		console.log('teacher mods')
 		function Teacher(){
 
 		}
@@ -64,6 +64,7 @@ console.log(resolveUrl('a/b/./c/./d?v=13&test=112#ee'));*/
 		}
 		module.exports = Teacher
 	})
+
 
 	define('mods/person', function(require, exports, module) {
 		var Teacher = require('mods/teacher');

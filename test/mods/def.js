@@ -1,4 +1,4 @@
-define('mods/def.js',['mods/dep'], function(require, exports, module) {
+define('mods/def', function(require, exports, module) {
 	console.log('def mods');
 	var Dep = require('mods/dep');
 	function Def(){
