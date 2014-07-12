@@ -17,10 +17,14 @@
         SYNC_ID = '__sync__',
         JS_EXT = '.js',
         doc = document,
-        unique_num = 0;
+        unique_num = 0,
+        currentlyAddingScript,
+        interactiveScript,
+        head = doc.head || get_tags("head")[0] || doc.documentElement,
+        baseElement = get_tags('base',head)[0];
 
     function has(obj, key) {
-        return Object.prototype.hasOwnProperty.call(obj, key)
+        return Object.prototype.hasOwnProperty.call(obj, key);
     }
 
     function for_in(o, fn) {
@@ -38,7 +42,7 @@
         try {
             return fn.apply(context, vargs || [])
         } catch (ex) {
-            setTimeout(function() {
+             setTimeout(function() {
                 throw ex
             }, 0)
         }
@@ -71,11 +75,6 @@
 
     function get_tags(name, root) {
         return (root || doc).getElementsByTagName(name)
-    }
-
-    function get_script_src() {
-        var scripts = doc.scripts || get_tags('script');
-        return scripts[scripts.length - 1].getAttribute('src') || '';
     }
 
     function is_array(obj) {
@@ -111,35 +110,16 @@
 
     function canonical(path) {
         path = normalize(path);
-        path = path.replace(DOT_RE, '/');
-        path = path.replace(MULTI_SLASH_RE, "$1/");
-        while (PARENT_DIR_RE.test(path)) {
-            path = path.replace(PARENT_DIR_RE, "");
-        }
-        var firstC = path.charAt(0);
-        if (!ABSOLUTE_RE.test(path)) {
-            if (firstC === '.') {
-                path = cfg.cwd + path;
-            } else if (firstC === '/') {
-                path = cfg.domain + path.substring(1)
-            } else {
-                path = cfg.base + path
-            }
-        }
-        if (path.indexOf("//") === 0) {
-            path = location.protocol + path
-        }
         return path;
     }
 
-    function load_script(url){
-        var elem = doc.createElement('script'),
-            head = doc.head || get_tags("head")[0];
+    function load_script(url, id) {
+        var elem = doc.createElement('script');
 
         function onload() {
             elem.onload = elem.onerror = elem.onreadystatechange = null
             head.removeChild(elem);
-            elem = null
+            elem = null;
         }
         if ('onload' in elem) {
             elem.onload = onload;
@@ -153,9 +133,39 @@
                 }
             }
         }
-        elem.src = url;
+
         elem.charset = 'utf-8';
-        head.appendChild(elem)
+        elem.async = true;
+        elem.src = url;
+        elem.id = id;
+        baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
+    }
+
+    function get_current_script() {
+        if (doc.currentScript) { //firefox 4+
+            return doc.currentScript;
+        }
+        // ref: https://github.com/samyk/jiagra/blob/master/jiagra.js
+        var stack;
+        try {
+            sojs.makeReferenceError();
+        } catch (e) {
+            stack = e.stack;
+            if (!stack && window.opera) {
+                stack = (String(e).match(/of linked script \S+/g) || []).join(" ");
+            }
+        }
+        if (stack) {
+            stack = stack.split(/[@ ]/g).pop();
+            stack = stack[0] == "(" ? stack.slice(1, -1) : stack;
+            stack = stack.replace(/(:\d+)?:\d+$/i, "");
+        }
+        var scripts = doc.scripts || get_tags("script",head);
+        for (var i = 0, script; script = scripts[i++];) {
+            if (script.readyState === "interactive" || script.src === stack) {
+                return script;
+            }
+        }
     }
 
     function EventHandle(handles, guid) {
@@ -206,7 +216,6 @@
 
     p.onDefine = function(factory, id, deps) {
         this.factory = factory;
-        if(!deps) debugger;
         this.deps = deps.concat(parse_deps(factory));
         this.emit('define', this)
     }
@@ -222,7 +231,6 @@
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
-        delete this.loading;
         delete this.handles;
         delete this.factory;
         delete this.deps;
@@ -245,64 +253,48 @@
         mod = this.getMod(mod, [], pMod && is_sync(pMod.id));
         var this_ = this;
         mod.once('load', callback);
-        if (!mod.loading) {
-            mod.loading = true;
-            this.loadDefine(mod, function() {
-                var deps = mod.deps,
-                    count = mod.deps.length;
-                if (!count) {
-                    mod.onLoad()
-                } else {
-                    for (var i = 0; i < deps.length; i++) {
-                        this_.loadMod(deps[i], function() {
-                            !--count && mod.onLoad()
-                        }, mod)
-                    }
+        this.loadDefine(mod, function() {
+            var deps = mod.deps,
+                count = deps && deps.length;
+            if (!count) {
+                mod.onLoad()
+            } else {
+                for (var i = 0; i < deps.length; i++) {
+                    this_.loadMod(deps[i], function() {
+                        !--count && mod.onLoad()
+                    }, mod)
                 }
-            })
-        }
+            }
+        })
     }
 
     p.loadDefine = function(mod, callback) {
         mod.once('define', callback);
-        if (this.runing) {
-            this.queues.push(mod);
-        } else {
-            this.runing = true;
-            this.currentMod = mod;
-            this.emit('request', mod);
-            if (!mod.requested) {
-                if (is_sync(mod.id) || !mod.url) {
-                    this.getDefine()
-                } else {
-                    load_script(mod.url)
-                }
+        this.emit('request', mod);
+        if (!mod.requested) {
+            if (is_sync(mod.id) || !mod.url) {
+                this.getDefine()
+            } else {
+                load_script(mod.url,mod.id)
             }
         }
     }
 
     p.getDefine = function(factory, id, deps) {
-        var mod = this.currentMod,
-            deps = deps || [];
-        delete this.currentMod;
-        if (mod) {
-            mod.onDefine(factory || mod.factory, id, mod.deps || []);
-            this.runing = false;
-            if (this.queues.length) {
-                var mod = this.queues.shift();
-                this.loadDefine(mod, EMPTY_FN)
-            }
-        } else {
-            mod = this.getMod(id,[],null,true);
-            mod.onDefine(factory, id, deps);
-            this.loadMod(mod, EMPTY_FN);
+        deps = deps || [];
+        var script = get_current_script();
+        var id = id || script.id;
+        var mod = this.modMap[id];
+        if (!mod) {
+            mod = this.getMod(id, deps, null, true);
         }
+        mod.onDefine(factory, id, deps);
     }
     var sojs = global.sojs = new ModLoader(),
         cfg = EMPTY,
         cwd = dirname(location.href),
         m = cwd.match(DOMAIN_RE);
-    cfg.dir = cfg.base = (dirname(get_script_src()) || cwd),
+    cfg.dir = cfg.base = (dirname(get_current_script().src) || cwd),
     cfg.cwd = cwd,
     cfg.domain = m ? m[0] : '';
 
@@ -310,6 +302,7 @@
         var len = arguments.length;
         if (len == 1) {
             factory = id;
+            id = null;
         } else if (len == 2) {
             factory = deps;
             is_array(id) ? deps = id : deps = null;
