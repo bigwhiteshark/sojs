@@ -1,5 +1,8 @@
 define(function(require,exports,module){
 	require('./rel');
+	//console.log(require.lastId,'ddddddddddd');
+	require('./child/chi');
+	//console.log(require.lastId,'ssssssssss');
 	require('./view');
 	require('mods/help')
 	function Cla(){

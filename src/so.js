@@ -271,16 +271,21 @@
     inherits(ModLoader, EventTarget);
     var p = ModLoader.prototype;
 
-    p.getMod = function(mod, deps, entry, sync, pmod) {
-        if(mod instanceof Mod){
-            return mod
+    p.getMod = function(id, deps, entry, sync, pmod) {
+        if(id instanceof Mod){
+            return id
         }else{
-            var firstC = mod.charAt(0), //relative path to id
-                name = mod.slice(2);
+            var firstC = id.charAt(0), //relative path to id
+                name = id.slice(2);
             if(firstC === '.'){ //if relative mod, get valid path
-                mod = dirname(pmod ? pmod.id : require.pid) + name;
+                var lastId = id;
+                if(require.lastId && (require.lastId.split('/').length>1)) { //relative path,exapmle for ./xx/xx/xx
+                    require.pid = require.pid.replace(require.lastId.slice(2),'')
+                }
+                id = dirname(pmod ? pmod.id : require.pid) + name;
+                require.lastId = lastId;//remeber last relative id
             }
-            return this.modMap[mod] || (this.modMap[mod] = new Mod(mod, deps, entry, sync, pmod))
+            return this.modMap[id] || (this.modMap[id] = new Mod(id, deps, entry, sync, pmod))
         }
     }
 

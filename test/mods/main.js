@@ -1,6 +1,6 @@
 define(function(require,exports,module){
 	console.log('main mods');;
-	var Computer = require('mods/computer');	
+	var Computer = require('./computer');	
 	console.log(Computer);
 	var obj = require('mods/obj');
 	console.log(obj)
