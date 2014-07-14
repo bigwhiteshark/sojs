@@ -215,8 +215,10 @@
         if (!this._listeners) return;
         var listeners = this._listeners[type];
         var args = Array.prototype.slice.call(arguments, 1);
-        for (var i = 0, len = listeners && listeners.length; i < len; i++) {
-            listeners[i].apply(this, args);
+       if (listeners) {
+            for (var i = 0; i < listeners.length; i++) {
+                listeners[i].apply(this, args);
+            }
         }
     };
 
@@ -276,15 +278,15 @@
             return id
         }else{
             var firstC = id.charAt(0), //relative path to id
-                name = id.slice(2);
-            if(firstC === '.'){ //if relative mod, get valid path
-                var lastId = id;
-                if(require.lastId && (require.lastId.split('/').length>1)) { //relative path,exapmle for ./xx/xx/xx
-                    require.pid = require.pid.replace(require.lastId.slice(2),'')
+                modName = id.slice(2),
+                prevId = id;
+            if(firstC === '.'){ //if relative mod , get valid path. for exapmle ./xx/xx/xx 
+                if(require.prevId && require.prevId.charAt(0) ===  '.' && (require.prevId.split('/').length>1)) { 
+                    require.pid = require.pid ? require.pid.replace(require.prevId.slice(2),'') : cfg.base
                 }
-                id = dirname(pmod ? pmod.id : require.pid) + name;
-                require.lastId = lastId;//remeber last relative id
+                id = dirname(pmod ? pmod.id : require.pid) + modName;
             }
+            require.prevId = prevId;//remeber last relative id
             return this.modMap[id] || (this.modMap[id] = new Mod(id, deps, entry, sync, pmod))
         }
     }
