@@ -21,7 +21,7 @@
         currentlyAddingScript,
         interactiveScript,
         head = doc.head || get_tags("head")[0] || doc.documentElement,
-        baseElement = get_tags('base',head)[0];
+        baseElement = get_tags('base', head)[0];
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key);
@@ -42,14 +42,10 @@
         try {
             return fn.apply(context, vargs || [])
         } catch (ex) {
-             setTimeout(function() {
+            setTimeout(function() {
                 throw ex
             }, 0)
         }
-    }
-
-    function get_uid() {
-        return ++unique_num;
     }
 
     function inherits(s, b) {
@@ -116,16 +112,17 @@
         return path;
     }
 
-    function unique(arr){
-        var ret = [], o = {};
-        for(var i = 0, val; val = arr[i++];){
-            if (!o[val]){
+    function unique(arr) {
+        var ret = [],
+            o = {};
+        for (var i = 0, val; val = arr[i++];) {
+            if (!o[val]) {
                 ret.push(val);
                 o[val] = 1
             }
         }
         return ret
-    }    
+    }
 
     function load_script(url, id) {
         var elem = doc.createElement('script');
@@ -174,7 +171,7 @@
             stack = stack[0] == "(" ? stack.slice(1, -1) : stack;
             stack = stack.replace(/(:\d+)?:\d+$/i, "");
         }
-        var scripts = doc.scripts || get_tags("script",head);
+        var scripts = doc.scripts || get_tags("script", head);
         for (var i = 0, script; script = scripts[i++];) {
             if (script.readyState === "interactive" || script.src === stack) {
                 return script;
@@ -216,7 +213,7 @@
         var listeners = this._listeners[type];
         var args = Array.prototype.slice.call(arguments, 1);
         if (listeners) {
-            for (var i = 0 ,listener; listener = listeners[i++];) {
+            for (var i = 0, listener; listener = listeners[i++];) {
                 listener.apply(this, args);
             }
         }
@@ -250,14 +247,16 @@
     }
 
     p.onLoad = function() {
-        this.entry && this.onExec();//if entry executed immediately
+        this.entry && this.onExec(); //if entry executed immediately
         this.emit('load', this);
     }
 
     p.onExec = function() {
         var f = this.factory;
         require.pid = this.id; //saved last mod's id to require relative mod.
-        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {}, this]) : f;
+        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -274,25 +273,25 @@
     var p = ModLoader.prototype;
 
     p.getMod = function(id, deps, entry, sync, pmod) {
-        if(id instanceof Mod){
+        if (id instanceof Mod) {
             return id
-        }else{
+        } else {
             var firstC = id.charAt(0), //relative path to id
                 modName = id.slice(2),
                 prevId = id;
-            if(firstC === '.'){ //if relative mod , get valid path. for exapmle ./xx/xx/xx 
-                if(require.prevId && require.prevId.charAt(0) ===  '.' && (require.prevId.split('/').length>1)) { 
-                    require.pid = require.pid ? require.pid.replace(require.prevId.slice(2),'') : cfg.base
+            if (firstC === '.') { //if relative mod , get valid path. for exapmle ./xx/xx/xx 
+                if (require.prevId && require.prevId.charAt(0) === '.' && (require.prevId.split('/').length > 1)) {
+                    require.pid = require.pid ? require.pid.replace(require.prevId.slice(2), '') : cfg.base
                 }
                 id = dirname(pmod ? pmod.id : require.pid) + modName;
             }
-            require.prevId = prevId;//remeber last relative id
+            require.prevId = prevId; //remeber last relative id
             return this.modMap[id] || (this.modMap[id] = new Mod(id, deps, entry, sync, pmod))
         }
     }
 
     p.loadMod = function(mod, callback, pmod) {
-        mod = this.getMod(mod, [], pmod && is_sync(pmod.id),null,pmod);
+        mod = this.getMod(mod, [], pmod && is_sync(pmod.id), null, pmod);
         var this_ = this;
         mod.once('load', callback);
         this.loadDefine(mod, function() { //recursive to parse mod dependency
@@ -318,9 +317,9 @@
         this.emit('request', mod);
         if (!mod.requested) {
             if (is_sync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
-                this.getDefine(mod.factory,mod.id,mod.deps)
+                this.getDefine(mod.factory, mod.id, mod.deps)
             } else {
-               load_script(mod.url,mod.id)
+                load_script(mod.url, mod.id)
             }
         }
     }
@@ -356,13 +355,14 @@
     global.require = function(id, callback) {
         var caller = arguments.callee.caller,
             caller = caller && caller.caller,
-            entry = caller != bind,deps;
+            entry = caller != bind,
+            deps;
         if (is_array(id)) {
             deps = id;
-            id = SYNC_ID + get_uid();
+            id = SYNC_ID + (++unique_num);
         }
         var mod = sojs.getMod(id, deps, entry || callback);
-        if (callback) {//async require
+        if (callback) { //async require
             sojs.loadMod(mod, function(mod) {
                 var args = [];
                 for (var i = 0, l = mod.deps.length; i < l; i++) {
