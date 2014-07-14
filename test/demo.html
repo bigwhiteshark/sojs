@@ -2,55 +2,13 @@
 <html>
 <meta charset='utf-8'>
 <head>
-	<script type="text/javascript" src="../src/so.js"></script>
+	<script type="text/javascript" src="../dist/so.js"></script>
 </head>
 <body>
 <script type="text/javascript">
 	sojs.config({
 		base:'./'
 	})
-var JS_EXT = '.js';
- function normalize(path) {
-    var last = path.length - 1;
-    var lastC = path.charAt(last);
-    if (lastC === "#") {
-        return path.substring(0, last)
-    }
-    return (path.substring(last - 2) === JS_EXT ||
-        path.indexOf("?") > 0 ||
-        lastC === "/") ? path : path + JS_EXT
-}
-var bootPath = 'dist';
-function resolveUrl(url) {
-	url = normalize(url);
-    var reParent = /[\-\w]+\/\.\.\//,
-        reDot = /\/\.\//g,
-        reSlash = /([^:/])\/+\//g,
-        reAbsolute = /^\/\/.|:\//;
-    url = url.replace(reDot,'/');
-    url = url.replace(reSlash, "$1/");
-    while (reParent.test(url)) {
-        url = url.replace(reParent, "");
-    }
-  	var firstC = url.charAt(0);
-	if (!reAbsolute.test(url)) {
-		if(firstC === '.'){
-			url = cfg.cwd + url;
-		}else if(firstC === '/'){
-    		url = cfg.domain + url.substring(1)
-		}else{
-			url = cfg.base + url
-		}
-	}
-    if (url.indexOf("//") === 0) {
-	    url = location.protocol + url
-	}
-    return url;
-}
-
-/*console.log(resolveUrl('/a/b/./c/./d'));
-console.log(resolveUrl('./a/b/./c/./d'));
-console.log(resolveUrl('a/b/./c/./d?v=13&test=112#ee'));*/
 
 	//inline mods,only sync mode
 	define('mods/teacher',function(require,exports,module){

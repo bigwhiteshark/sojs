@@ -215,9 +215,9 @@
         if (!this._listeners) return;
         var listeners = this._listeners[type];
         var args = Array.prototype.slice.call(arguments, 1);
-       if (listeners) {
-            for (var i = 0; i < listeners.length; i++) {
-                listeners[i].apply(this, args);
+        if (listeners) {
+            for (var i = 0 ,listener; listener = listeners[i++];) {
+                listener.apply(this, args);
             }
         }
     };
