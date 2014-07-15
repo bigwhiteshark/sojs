@@ -3,5 +3,6 @@
 so-amd.js
 so-cmd.js
 so-simple.js
+so-noload.js
 *.sublime-project
 *.sublime-workspace

@@ -2,7 +2,7 @@
 <html>
 <meta charset='utf-8'>
 <head>
-	<script type="text/javascript" src="../dist/so.js"></script>
+	<script type="text/javascript" src="../src/so.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -72,8 +72,12 @@ init();*/
 /*(function(){
 	require('mods/main');
 })()*/
+//debugger;
+require('http://sv.so.com/p.js',function(){
+	console.log('ddddd')
+});
 
-
+//sojs.run('mods/main');
 require('mods/main');
 
 

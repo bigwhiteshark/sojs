@@ -124,13 +124,14 @@
         return ret
     }
 
-    function load_script(url, id) {
+    function load_script(url, id, callback) {
         var elem = doc.createElement('script');
 
         function onload() {
             elem.onload = elem.onerror = elem.onreadystatechange = null
             head.removeChild(elem);
             elem = null;
+            callback()
         }
         if ('onload' in elem) {
             elem.onload = onload;
@@ -317,21 +318,26 @@
         this.emit('request', mod);
         if (!mod.requested) {
             if (is_sync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
-                this.getDefine(mod.factory, mod.id, mod.deps)
+                 mod.onDefine(mod.factory, mod.id, mod.deps)
             } else {
-                load_script(mod.url, mod.id)
+                load_script(mod.url, mod.id,function(){
+                    mod.onDefine(mod.factory, mod.id, mod.deps)
+                });
             }
         }
     }
 
     p.getDefine = function(factory, id, deps) {
+        var script = get_current_script(),
+            id = id || script.id,
+            mod = this.modMap[id];
         deps = deps || [];
-        var script = get_current_script();
-        var id = id || script.id;
-        var mod = this.modMap[id];
         !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
-        mod.onDefine(factory, id, deps);
+        mod.factory = factory;
+        mod.deps = deps;
+        //mod.onDefine(factory, id, deps); move to script onload
     }
+
     var sojs = global.sojs = new ModLoader(),
         cfg = EMPTY,
         cwd = dirname(location.href),

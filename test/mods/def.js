@@ -1,6 +1,7 @@
-define('mods/def', function(require, exports, module) {
+define('mods/def', ['mods/noload'],function(require, exports, module) {
 	console.log('def mods');
 	var Dep = require('mods/dep');
+	var Noload = require('mods/noload');
 	function Def(){
 
 	}
@@ -13,3 +14,7 @@ define('mods/def', function(require, exports, module) {
 
 	return Def
 });
+
+define('mods/noload',function(){
+	console.log('noload mods');
+})
