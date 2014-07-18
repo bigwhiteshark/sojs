@@ -43,8 +43,8 @@
     }
 
     sojs.on("request", function(mod) {
-        var uri = mod.uri,exec,
-            m = uri.match(/[^?]+(\.\w+)(?:\?|#|$)/);
+        var id = mod.id,exec,
+            m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/);
         if (m){
             for(var k in plugins){
                 var exts = "," + k + ",";
@@ -55,9 +55,9 @@
             }
             if (exec) {
                 mod.requested = true;
-                xhr(uri, function(content) {
+                xhr(id, function(content) {
                     var factory = exec(content);
-                    sojs.getDefine(factory, uri)
+                    mod.onDefine(factory, id)
                 })
             }
         }

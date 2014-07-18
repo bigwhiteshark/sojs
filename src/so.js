@@ -5,6 +5,9 @@
  * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
+    if (global.sojs) {
+       return
+    }
     var EMPTY = {},
         PATH_RE = /[^?#]*\//,
         PARENT_DIR_RE = /([^\/]*)\/\.\.\/?/,
@@ -91,17 +94,17 @@
 
     function canonical(path) {
         path = normalize(path);
-        path = path.replace(DOT_RE, '/');
-        path = path.replace(MULTI_SLASH_RE, "$1/");
-        while (PARENT_DIR_RE.test(path)) {
-            path = path.replace(PARENT_DIR_RE, "");
-        }
         var firstC = path.charAt(0);
         if (!ABSOLUTE_RE.test(path)) {
             if (firstC === '.') {
                 path = cfg.cwd + path;
+                path = path.replace(DOT_RE, '/');
+                path = path.replace(MULTI_SLASH_RE, "$1/");
+                while (PARENT_DIR_RE.test(path)) {
+                    path = path.replace(PARENT_DIR_RE, "");
+                }
             } else if (firstC === '/') {
-                path = cfg.domain + path.substring(1)
+                path = cfg.domain ? cfg.domain + path.substring(1) : path
             } else {
                 path = cfg.base + path
             }
@@ -124,7 +127,7 @@
         return ret
     }
 
-    function load_script(url, id, callback) {
+    function load_script(url, callback) {
         var elem = doc.createElement('script');
 
         function onload() {
@@ -149,7 +152,6 @@
         elem.charset = 'utf-8';
         elem.async = true;
         elem.src = url;
-        elem.id = id;
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
 
@@ -232,7 +234,6 @@
     function Mod(id, deps, entry, sync, pmod) {
         this.id = id;
         this.sync = sync;
-        this.url = canonical(id);
         this.deps = deps || [];
         this.exports = EMPTY;
         this.pmod = pmod;
@@ -255,9 +256,7 @@
     p.onExec = function() {
         var f = this.factory;
         require.pid = this.id; //saved last mod's id to require relative mod.
-        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {},
-            this
-        ]) : f;
+        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {},this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -287,6 +286,8 @@
                 id = dirname(pmod ? pmod.id : require.pid) + modName;
             }
             require.prevId = prevId; //remeber last relative id
+
+            id = canonical(id);
             return this.modMap[id] || (this.modMap[id] = new Mod(id, deps, entry, sync, pmod))
         }
     }
@@ -320,7 +321,7 @@
             if (is_sync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
                  mod.onDefine(mod.factory, mod.id, mod.deps)
             } else {
-                load_script(mod.url, mod.id,function(){
+                load_script(mod.id,function(){
                     mod.onDefine(mod.factory, mod.id, mod.deps)
                 });
             }
@@ -329,13 +330,12 @@
 
     p.getDefine = function(factory, id, deps) {
         var script = get_current_script(),
-            id = id || script.id,
+            id = id || script.src,
             mod = this.modMap[id];
         deps = deps || [];
         !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
         mod.factory = factory;
         mod.deps = deps;
-        //mod.onDefine(factory, id, deps); move to script onload
     }
 
     var sojs = global.sojs = new ModLoader(),
@@ -372,7 +372,7 @@
             sojs.loadMod(mod, function(mod) {
                 var args = [];
                 for (var i = 0, l = mod.deps.length; i < l; i++) {
-                    var depMod = sojs.modMap[mod.deps[i]];
+                    var depMod = sojs.getMod(mod.deps[i]);
                     args.push(depMod.exports)
                 }
                 args.push(mod.exports);
@@ -388,6 +388,6 @@
     }
 
     sojs.config = function(pathMap) {
-        cfg.base = pathMap.base
+        cfg.base = canonical(pathMap.base);
     }
 })(this)
