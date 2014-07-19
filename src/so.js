@@ -6,39 +6,44 @@
  */
 (function(global) {
     if (global.sojs) {
-       return
+        return
     }
-    var EMPTY = {},
-        PATH_RE = /[^?#]*\//,
+    var PATH_RE = /[^?#]*\//,
         PARENT_DIR_RE = /([^\/]*)\/\.\.\/?/,
         DOT_RE = /\/\.\//g,
         MULTI_SLASH_RE = /([^:/])\/+\//g,
         DOMAIN_RE = /^.*?\/\/.*?\//,
         ABSOLUTE_RE = /^\/\/.|:\//,
-        DEPS_RE = /require\(['"]([^'"]+)['"]\)/g,
+        DEPS_RE = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
+        COMMENT_RE = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg,
+        PATHS_RE = /^([^/:]+)(\/.+)$/,
+        VARS_RE = /{([^{]+)}/g,
         EMPTY_FN = new Function,
+        EMPTY = {},
         SYNC_ID = '__sync__',
         JS_EXT = '.js',
         doc = document,
         unique_num = 0,
-        currentlyAddingScript,
-        interactiveScript,
         head = doc.head || get_tags("head")[0] || doc.documentElement,
         baseElement = get_tags('base', head)[0];
+
+    function guid() {
+        return unique_num++;
+    }
 
     function has(obj, key) {
         return Object.prototype.hasOwnProperty.call(obj, key);
     }
 
-    function for_in(o, fn) {
-        for (var k in o)
+    function for_each(o, fn) {
+        for (var k in o) {
             if (has(o, k) && fn(o[k], k) === false)
                 return false
+        }
     }
 
     function strip_comments(code) {
-        var reComment = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
-        return code.replace(reComment, '');
+        return code.replace(COMMENT_RE, '');
     }
 
     function bind(fn, context, vargs) {
@@ -61,10 +66,6 @@
         return (root || doc).getElementsByTagName(name)
     }
 
-    function is_array(obj) {
-        return obj instanceof Array
-    }
-
     function parse_deps(factory) {
         var code = strip_comments(factory + ''),
             match, ret = [];
@@ -76,6 +77,10 @@
 
     function is_sync(id) {
         return new RegExp(SYNC_ID).test(id)
+    }
+
+    function is_rel_url(it) {
+        return it.charAt(0) == '.';
     }
 
     function dirname(path) {
@@ -92,21 +97,21 @@
         return (path.substring(last - 2) === JS_EXT || path.indexOf("?") > 0 || lastC === "/") ? path : path + JS_EXT
     }
 
-    function canonical(path) {
-        path = normalize(path);
+    function canonical(path, refUri) {
+        //path = normalize(path);
         var firstC = path.charAt(0);
         if (!ABSOLUTE_RE.test(path)) {
             if (firstC === '.') {
-                path = cfg.cwd + path;
+                path = (refUri ? dirname(refUri) : config.cwd) + path;
                 path = path.replace(DOT_RE, '/');
                 path = path.replace(MULTI_SLASH_RE, "$1/");
                 while (PARENT_DIR_RE.test(path)) {
                     path = path.replace(PARENT_DIR_RE, "");
                 }
             } else if (firstC === '/') {
-                path = cfg.domain ? cfg.domain + path.substring(1) : path
+                path = config.domain ? config.domain + path.substring(1) : path
             } else {
-                path = cfg.base + path
+                path = config.base + path
             }
         }
         if (path.indexOf("//") === 0) {
@@ -127,7 +132,7 @@
         return ret
     }
 
-    function load_script(url, callback) {
+    function load_script(url, id, callback) {
         var elem = doc.createElement('script');
 
         function onload() {
@@ -152,6 +157,7 @@
         elem.charset = 'utf-8';
         elem.async = true;
         elem.src = url;
+        elem.id = id;
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
 
@@ -189,6 +195,52 @@
             }
         }
         return -1;
+    }
+
+    function is_type(type) {
+        return function(obj) {
+            return EMPTY.toString.call(obj) == '[object ' + type + ']'
+        }
+    }
+    var is_string = is_type('String'),
+        is_function = is_type('Function'),
+        is_array = Array.isArray || is_type('Array'),
+        is_object = is_type('Object');
+
+    function parse_alias(id) {
+        var alias = config.alias;
+        return alias && is_string(alias[id]) ? alias[id] : id
+    }
+
+    function parse_paths(id) {
+        var paths = config.paths,
+            m;
+        if (paths && (m = id.match(PATHS_RE)) && is_string(paths[m[1]])) {
+            id = paths[m[1]] + m[2]
+        }
+        return id
+    }
+
+    function parse_vars(id) {
+        var vars = config.vars;
+        if (vars && id.indexOf("{") > -1) {
+            id = id.replace(VARS_RE, function(m, key) {
+                return is_string(vars[key]) ? vars[key] : m
+            })
+        }
+        return id
+    }
+
+    function parse_map(uri) {
+        var map = config.map,
+            ret = uri;
+        if (map) {
+            for (var i = 0, rule; rule = map[i++];) {
+                ret = is_function(rule) ? (rule(uri) || uri) : uri.replace(rule[0], rule[1]);
+                if (ret !== uri) break // Only apply the first matched rule                
+            }
+        }
+        return ret
     }
 
     function EventTarget() {
@@ -242,9 +294,10 @@
     inherits(Mod, EventTarget);
     var p = Mod.prototype;
 
-    p.onDefine = function(factory, id, deps) {
+    p.onDefine = function(factory, deps) {
         this.factory = factory;
-        this.deps = unique(deps.concat(parse_deps(factory)));
+        var mdeps = parse_deps(factory);
+        this.deps = unique(deps ? deps.concat(mdeps) : mdeps);
         this.emit('define', this)
     }
 
@@ -255,8 +308,10 @@
 
     p.onExec = function() {
         var f = this.factory;
-        require.pid = this.id; //saved last mod's id to require relative mod.
-        var ret = (typeof f == 'function') ? bind(f, global, [require, this.exports = {},this]) : f;
+        require.id = this.id; //saved last mod's id to require relative mod.
+        var ret = is_function(f) ? bind(f, global, [require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -276,19 +331,23 @@
         if (id instanceof Mod) {
             return id
         } else {
-            var firstC = id.charAt(0), //relative path to id
-                modName = id.slice(2),
+            var modName = id.slice(2),
                 prevId = id;
-            if (firstC === '.') { //if relative mod , get valid path. for exapmle ./xx/xx/xx 
-                if (require.prevId && require.prevId.charAt(0) === '.' && (require.prevId.split('/').length > 1)) {
-                    require.pid = require.pid ? require.pid.replace(require.prevId.slice(2), '') : cfg.base
+            if (is_rel_url(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx 
+                if (require.prevId && is_rel_url(require.prevId) && (require.prevId.split('/').length > 1)) {
+                    require.id = require.id ? require.id.replace(require.prevId.slice(2), '') : config.base
                 }
-                id = dirname(pmod ? pmod.id : require.pid) + modName;
+                id = dirname(pmod ? pmod.id : require.id) + modName;
             }
             require.prevId = prevId; //remeber last relative id
 
-            id = canonical(id);
-            return this.modMap[id] || (this.modMap[id] = new Mod(id, deps, entry, sync, pmod))
+            var mod = this.modMap[id];
+            if (!mod) {
+                mod = this.modMap[id] = new Mod(id, deps, entry, sync, pmod);
+                mod.uri = this.resolve(id);
+                this.emit('resolve', mod);
+            }
+            return mod;
         }
     }
 
@@ -319,10 +378,10 @@
         this.emit('request', mod);
         if (!mod.requested) {
             if (is_sync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
-                 mod.onDefine(mod.factory, mod.id, mod.deps)
+                mod.onDefine(mod.factory, mod.deps)
             } else {
-                load_script(mod.id,function(){
-                    mod.onDefine(mod.factory, mod.id, mod.deps)
+                load_script(mod.uri, mod.id, function() {
+                    mod.onDefine(mod.factory, mod.deps)
                 });
             }
         }
@@ -330,7 +389,7 @@
 
     p.getDefine = function(factory, id, deps) {
         var script = get_current_script(),
-            id = id || script.src,
+            id = id || script.id,
             mod = this.modMap[id];
         deps = deps || [];
         !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
@@ -338,13 +397,27 @@
         mod.deps = deps;
     }
 
+    p.resolve = function(id, refUri) { //ref seajs
+        if (!id) return ""
+
+        id = parse_alias(id);
+        id = parse_paths(id);
+        id = parse_vars(id);
+        id = normalize(id);
+
+        var uri = canonical(id, refUri)
+        uri = parse_map(uri)
+
+        return uri
+    }
+
     var sojs = global.sojs = new ModLoader(),
-        cfg = EMPTY,
+        config = EMPTY,
         cwd = dirname(location.href),
         m = cwd.match(DOMAIN_RE);
-    cfg.dir = cfg.base = (dirname(get_current_script().src) || cwd),
-    cfg.cwd = cwd,
-    cfg.domain = m ? m[0] : '';
+    config.dir = config.base = (dirname(get_current_script().src) || cwd),
+    config.cwd = cwd,
+    config.domain = m ? m[0] : '';
 
     global.define = function(id, deps, factory) {
         var len = arguments.length;
@@ -365,7 +438,7 @@
             deps;
         if (is_array(id)) {
             deps = id;
-            id = SYNC_ID + (++unique_num);
+            id = SYNC_ID + guid();
         }
         var mod = sojs.getMod(id, deps, entry || callback);
         if (callback) { //async require
@@ -388,6 +461,6 @@
     }
 
     sojs.config = function(pathMap) {
-        cfg.base = canonical(pathMap.base);
+        config.base = canonical(pathMap.base);
     }
 })(this)

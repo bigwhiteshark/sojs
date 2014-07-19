@@ -6,10 +6,10 @@
  */
 (function(global) {
     var plugins = {
-        '.tpl,.html':function(content){
+        '.tpl,.html,text': function(content) {
             return jsEscape(content)
         },
-        '.json':function(content){
+        '.json': function(content) {
             return content
         }
     }
@@ -42,24 +42,44 @@
             .replace(/[\u2029]/g, "\\u2029")
     }
 
-    sojs.on("request", function(mod) {
-        var id = mod.id,exec,
-            m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/);
-        if (m){
-            for(var k in plugins){
+    function getPluginExec(name) {
+        var exec;
+        if (name) {
+            for (var k in plugins) {
                 var exts = "," + k + ",";
-                if (exts.indexOf("," + m[1] + ",") > -1) {
+                if (exts.indexOf("," + name + ",") > -1) {
                     exec = plugins[k];
                     break;
                 }
             }
-            if (exec) {
-                mod.requested = true;
-                xhr(id, function(content) {
-                    var factory = exec(content);
-                    mod.onDefine(factory, id)
-                })
-            }
+        }
+        return exec
+    }
+
+    sojs.on('resolve', function(mod) {
+        var id = mod.id,
+            m, name;
+        if ((m = id.match(/^(\w+)!(.+)$/))) {
+            name = m[1];
+            id = m[2];
+        } else if ((m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/))) {
+            name = m[1];
+        }
+        if(name){
+            id = id + '#';
+            mod.uri = sojs.resolve(id);
+            mod._exec = getPluginExec(name);
+        }
+    })
+
+    sojs.on("request", function(mod) {
+        var exec = mod._exec;
+        if (exec) {
+            mod.requested = true;
+            xhr(mod.uri, function(content) {
+                var factory = exec(content);
+                mod.onDefine(factory)
+            })
         }
     })
 })(this);

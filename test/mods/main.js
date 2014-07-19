@@ -50,6 +50,8 @@ define(function(require,exports,module){
     var html = require('mods/tmpl.html');
     console.log(html)
     var tpl = require('mods/tmpl.tpl');
-    console.log(tpl)
+    console.log(tpl);
+    var text = require('text!mods/tmpl.txt');
+    console.log(text);
 
 });
