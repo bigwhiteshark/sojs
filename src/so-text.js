@@ -68,12 +68,12 @@
         if(name){
             id = id + '#';
             mod.uri = sojs.resolve(id);
-            mod._exec = getPluginExec(name);
+            mod.exec = getPluginExec(name);
         }
     })
 
     sojs.on("request", function(mod) {
-        var exec = mod._exec;
+        var exec = mod.exec;
         if (exec) {
             mod.requested = true;
             xhr(mod.uri, function(content) {

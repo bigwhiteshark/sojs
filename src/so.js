@@ -98,7 +98,6 @@
     }
 
     function canonical(path, refUri) {
-        //path = normalize(path);
         var firstC = path.charAt(0);
         if (!ABSOLUTE_RE.test(path)) {
             if (firstC === '.') {
@@ -153,9 +152,9 @@
                 }
             }
         }
-
         elem.charset = 'utf-8';
         elem.async = true;
+        elem.defer = true;
         elem.src = url;
         elem.id = id;
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
@@ -331,9 +330,9 @@
         if (id instanceof Mod) {
             return id
         } else {
-            var modName = id.slice(2),
-                prevId = id;
-            if (is_rel_url(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx 
+            var prevId = id;
+            if (is_rel_url(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
+                var modName = id.slice(2);
                 if (require.prevId && is_rel_url(require.prevId) && (require.prevId.split('/').length > 1)) {
                     require.id = require.id ? require.id.replace(require.prevId.slice(2), '') : config.base
                 }
@@ -353,7 +352,7 @@
 
     p.loadMod = function(mod, callback, pmod) {
         mod = this.getMod(mod, [], pmod && is_sync(pmod.id), null, pmod);
-        var this_ = this;
+        var self = this;
         mod.once('load', callback);
         this.loadDefine(mod, function() { //recursive to parse mod dependency
             var deps = mod.deps,
@@ -362,7 +361,7 @@
                 mod.onLoad()
             } else {
                 for (var i = 0; i < deps.length; i++) {
-                    this_.loadMod(deps[i], function() {
+                    self.loadMod(deps[i], function() {
                         !--count && mod.onLoad()
                     }, mod)
                 }
@@ -397,7 +396,7 @@
         mod.deps = deps;
     }
 
-    p.resolve = function(id, refUri) { //ref seajs
+    p.resolve = function(id, refUri) { //copy from seajs
         if (!id) return ""
 
         id = parse_alias(id);
@@ -411,6 +410,28 @@
         return uri
     }
 
+    p.config = function(configData) {
+        for_each(configData, function(curr, key) {
+            var prev = config[key];
+            if (prev && is_object(prev)) {
+                for (var k in curr) {
+                    prev[k] = curr[k]
+                }
+            } else {
+                if (is_array(prev)) {
+                    curr = prev.concat(curr)
+                }
+                else if (key === "base") {
+                    if (curr.slice(-1) !== "/") {
+                        curr += "/"
+                    }
+                    curr = canonical(curr)
+                }
+                config[key] = curr
+            }
+        })
+    }
+
     var sojs = global.sojs = new ModLoader(),
         config = EMPTY,
         cwd = dirname(location.href),
@@ -421,12 +442,17 @@
 
     global.define = function(id, deps, factory) {
         var len = arguments.length;
-        if (len == 1) {
+        if (len == 1) { // define(factory)
             factory = id;
-            id = null;
+            id = null
         } else if (len == 2) {
             factory = deps;
-            is_array(id) ? deps = id : deps = null;
+            if (is_array(id)) { // define(deps, factory)
+                deps = id;
+                id = null
+            } else { //define(id, factory)
+                deps = null
+            }
         }
         sojs.getDefine(factory, id, deps)
     }
@@ -438,7 +464,7 @@
             deps;
         if (is_array(id)) {
             deps = id;
-            id = SYNC_ID + guid();
+            id = SYNC_ID + guid(); //async mod id
         }
         var mod = sojs.getMod(id, deps, entry || callback);
         if (callback) { //async require
@@ -460,7 +486,6 @@
         }
     }
 
-    sojs.config = function(pathMap) {
-        config.base = canonical(pathMap.base);
-    }
+    sojs.run = require;
+
 })(this)
