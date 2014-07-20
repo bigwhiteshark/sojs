@@ -8,7 +8,8 @@
 <body>
 <script type="text/javascript">
 	sojs.config({
-		base:'.'
+		base:'.',
+		preload:['http://sv.so.com/p.js','http://sv.so.com/l.js']
 	});
 
 	//inline mods,only sync mode
@@ -40,8 +41,8 @@
 
 		return Person
 	});
-	//debugger;
 	var p = require('mods/person');
+	//var p = sojs.run('mods/person');
 	console.log(p);
 
 	/*sojs.use('mods/main',function(a){
@@ -75,10 +76,16 @@ init();*/
 	//debugger;
 	//sojs.run('mods/main');
 	//require('mods/main');
-});
-sojs.run('mods/main');*/
-require('mods/main');
+});*/
 
+//sojs.run('mods/main');
+sojs.run('mods/main',function(){
+	console.log('boot');
+});
+/*require('mods/main',function(){
+	console.log('boot');
+});
+*/
 	
 </script>
 </body>

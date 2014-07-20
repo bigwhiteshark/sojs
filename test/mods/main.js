@@ -1,5 +1,4 @@
 define(function(require,exports,module){
-    debugger;
 	console.log('main mods');
 	var Computer = require('./computer');	
 	console.log(Computer);

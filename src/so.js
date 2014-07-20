@@ -308,7 +308,9 @@
     p.onExec = function() {
         var f = this.factory;
         require.id = this.id; //saved last mod's id to require relative mod.
-        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
+        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -390,7 +392,7 @@
             mod = this.modMap[id];
         !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
         mod.factory = factory;
-        mod.deps = deps;
+        deps && (mod.deps = mod.deps.concat(deps));
     }
 
     p.resolve = function(id, refUri) { //copy from seajs
@@ -444,6 +446,11 @@
             id = SYNC_ID + guid(); //async mod id
         }
         var mod = sojs.getMod(id, deps, entry || callback);
+        if (!mod.sync && !opts.amd) {
+            var preloadMods = opts.preload; //preload mod
+            preloadMods && (mod.deps = preloadMods.concat(mod.deps));
+            delete opts.preload;
+        }
         if (callback) { //async require
             sojs.loadMod(mod, function(mod) {
                 var args = [];
@@ -466,7 +473,18 @@
     sojs.run = function(id, callback) {
         opts.amd = false; //wether to support amd
         return sojs.require(id, callback, true);
+        /*sojs.preload(function() {
+            sojs.require(id, callback)
+        })*/
     };
+
+    sojs.preload = function(callback){
+        var preloadMods = opts.preload;
+        sojs.require(preloadMods, function() {
+           callback();
+           delete opts.preload;
+        },true)
+    }
 
     global.define = function(id, deps, factory) {
         var len = arguments.length;
@@ -487,7 +505,15 @@
 
     global.require = function(id, callback) {
         opts.amd = true;
-        return sojs.require(id, callback, true);
+        //return sojs.require(id, callback, true);
+        var mod = sojs.getMod(id);
+        if (!mod.sync) {
+            sojs.preload(function() {
+                sojs.require(id, callback, true)
+            })
+        }else{
+            return sojs.require(id, callback, true)
+        }
     }
 
 })(this)
