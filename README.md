@@ -3,14 +3,14 @@ sojs,so open, so fast, so simple。so,编程就是如此简单。
 
 sojs提供cdn引用地址:
 
-		http://s0.qhimg.com/!2222fafb/so.js
-		http://s1.qhimg.com/!2222fafb/so.js
-		http://s2.qhimg.com/!2222fafb/so.js
+		http://s0.qhimg.com/!b3e3e875/so.js
+		http://s1.qhimg.com/!b3e3e875/so.js
+		http://s2.qhimg.com/!b3e3e875/so.js
 
 		…………………
 
-		http://s8.qhimg.com/!2222fafb/so.js
-		http://s9.qhimg.com/!2222fafb/so.js
+		http://s8.qhimg.com/!b3e3e875/so.js
+		http://s9.qhimg.com/!b3e3e875/so.js
 
 ## 简介
 一个极简极小的符合AMD规范按需模块加载器，特点是小巧、简洁、轻量级，目的使开发者能够快速上手，无学习成本，按模块开发。
@@ -140,7 +140,35 @@ exports 是一个对象，用来向外提供模块接口。
 
 module 是一个对象，上面存储了与当前模块相关联的一些属性和方法。
 
+**模块的加载启动**
+
+sojs.use Function
+
+用来在页面中加载模块。
+
+sojs.use sojs.use(id, callback?)
+
+通过 use 方法，可以在页面中加载任意模块：
+
+// 加载模块 main，并在加载完成时，执行指定回调
+
+	sojs.use('./main', function(main) {
+	  main.init();
+	});
+
+use 方法还可以一次加载多个模块：
+
+// // 并发加载模块 a 和模块 b，并在都加载完成时，执行指定回调
+
+	sojs.use(['./a', './b'], function(a, b) {
+	  a.init();
+	  b.init();
+	});
+
+callback 参数可选，省略时，表示无需回调。
+
 ## 保留字
+
 sojs
 
 
