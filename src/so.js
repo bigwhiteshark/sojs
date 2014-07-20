@@ -97,20 +97,20 @@
         return (path.substring(last - 2) === JS_EXT || path.indexOf("?") > 0 || lastC === "/") ? path : path + JS_EXT
     }
 
-    function canonical(path, refUri) {
+    function canonical_uri(path, refUri) {
         var firstC = path.charAt(0);
         if (!ABSOLUTE_RE.test(path)) {
             if (firstC === '.') {
-                path = (refUri ? dirname(refUri) : config.cwd) + path;
+                path = (refUri ? dirname(refUri) : opts.cwd) + path;
                 path = path.replace(DOT_RE, '/');
                 path = path.replace(MULTI_SLASH_RE, "$1/");
                 while (PARENT_DIR_RE.test(path)) {
                     path = path.replace(PARENT_DIR_RE, "");
                 }
             } else if (firstC === '/') {
-                path = config.domain ? config.domain + path.substring(1) : path
+                path = opts.domain ? opts.domain + path.substring(1) : path
             } else {
-                path = config.base + path
+                path = opts.base + path
             }
         }
         if (path.indexOf("//") === 0) {
@@ -207,12 +207,12 @@
         is_object = is_type('Object');
 
     function parse_alias(id) {
-        var alias = config.alias;
+        var alias = opts.alias;
         return alias && is_string(alias[id]) ? alias[id] : id
     }
 
     function parse_paths(id) {
-        var paths = config.paths,
+        var paths = opts.paths,
             m;
         if (paths && (m = id.match(PATHS_RE)) && is_string(paths[m[1]])) {
             id = paths[m[1]] + m[2]
@@ -221,7 +221,7 @@
     }
 
     function parse_vars(id) {
-        var vars = config.vars;
+        var vars = opts.vars;
         if (vars && id.indexOf("{") > -1) {
             id = id.replace(VARS_RE, function(m, key) {
                 return is_string(vars[key]) ? vars[key] : m
@@ -231,7 +231,7 @@
     }
 
     function parse_map(uri) {
-        var map = config.map,
+        var map = opts.map,
             ret = uri;
         if (map) {
             for (var i = 0, rule; rule = map[i++];) {
@@ -301,16 +301,14 @@
     }
 
     p.onLoad = function() {
-        this.entry && this.onExec(); //if entry executed immediately
+        (opts.amd || this.entry) && this.onExec(); //if entry executed immediately
         this.emit('load', this);
     }
 
     p.onExec = function() {
         var f = this.factory;
         require.id = this.id; //saved last mod's id to require relative mod.
-        var ret = is_function(f) ? bind(f, global, [require, this.exports = {},
-            this
-        ]) : f;
+        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -334,7 +332,7 @@
             if (is_rel_url(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
                 var modName = id.slice(2);
                 if (require.prevId && is_rel_url(require.prevId) && (require.prevId.split('/').length > 1)) {
-                    require.id = require.id ? require.id.replace(require.prevId.slice(2), '') : config.base
+                    require.id = require.id ? require.id.replace(require.prevId.slice(2), '') : opts.base
                 }
                 id = dirname(pmod ? pmod.id : require.id) + modName;
             }
@@ -390,7 +388,6 @@
         var script = get_current_script(),
             id = id || script.id,
             mod = this.modMap[id];
-        deps = deps || [];
         !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
         mod.factory = factory;
         mod.deps = deps;
@@ -404,15 +401,15 @@
         id = parse_vars(id);
         id = normalize(id);
 
-        var uri = canonical(id, refUri)
+        var uri = canonical_uri(id, refUri)
         uri = parse_map(uri)
 
         return uri
     }
 
-    p.config = function(configData) {
-        for_each(configData, function(curr, key) {
-            var prev = config[key];
+    p.config = function(options) {
+        for_each(options, function(curr, key) {
+            var prev = opts[key];
             if (prev && is_object(prev)) {
                 for (var k in curr) {
                     prev[k] = curr[k]
@@ -420,48 +417,28 @@
             } else {
                 if (is_array(prev)) {
                     curr = prev.concat(curr)
-                }
-                else if (key === "base") {
+                } else if (key === "base") {
                     if (curr.slice(-1) !== "/") {
                         curr += "/"
                     }
-                    curr = canonical(curr)
+                    curr = canonical_uri(curr)
                 }
-                config[key] = curr
+                opts[key] = curr
             }
         })
     }
 
     var sojs = global.sojs = new ModLoader(),
-        config = EMPTY,
+        opts = EMPTY,
         cwd = dirname(location.href),
         m = cwd.match(DOMAIN_RE);
-    config.dir = config.base = (dirname(get_current_script().src) || cwd),
-    config.cwd = cwd,
-    config.domain = m ? m[0] : '';
+    opts.dir = opts.base = (dirname(get_current_script().src) || cwd),
+    opts.cwd = cwd,
+    opts.domain = m ? m[0] : '';
+    sojs.opts = opts;
 
-    global.define = function(id, deps, factory) {
-        var len = arguments.length;
-        if (len == 1) { // define(factory)
-            factory = id;
-            id = null
-        } else if (len == 2) {
-            factory = deps;
-            if (is_array(id)) { // define(deps, factory)
-                deps = id;
-                id = null
-            } else { //define(id, factory)
-                deps = null
-            }
-        }
-        sojs.getDefine(factory, id, deps)
-    }
-
-    global.require = function(id, callback) {
-        var caller = arguments.callee.caller,
-            caller = caller && caller.caller,
-            entry = caller != bind,
-            deps;
+    sojs.require = function(id, callback, entry) {
+        var deps;
         if (is_array(id)) {
             deps = id;
             id = SYNC_ID + guid(); //async mod id
@@ -486,6 +463,31 @@
         }
     }
 
-    sojs.run = require;
+    sojs.run = function(id, callback) {
+        opts.amd = false; //wether to support amd
+        return sojs.require(id, callback, true);
+    };
+
+    global.define = function(id, deps, factory) {
+        var len = arguments.length;
+        if (len == 1) { // define(factory)
+            factory = id;
+            id = null
+        } else if (len == 2) {
+            factory = deps;
+            if (is_array(id)) { // define(deps, factory)
+                deps = id;
+                id = null
+            } else { //define(id, factory)
+                deps = null
+            }
+        }
+        sojs.getDefine(factory, id, deps)
+    }
+
+    global.require = function(id, callback) {
+        opts.amd = true;
+        return sojs.require(id, callback, true);
+    }
 
 })(this)

@@ -9,7 +9,7 @@
 <script type="text/javascript">
 	sojs.config({
 		base:'.'
-	})
+	});
 
 	//inline mods,only sync mode
 	define('mods/teacher',function(require,exports,module){
@@ -69,18 +69,15 @@
 
 }
 init();*/
-
-/*(function(){
-	require('mods/main');
-})()*/
 //debugger;
-/*require('http://sv.so.com/p.js',function(){
-	console.log('ddddd')
-});*/
-
-//sojs.run('mods/main');
-sojs.run('mods/main');
-
+/*sojs.run('http://sv.so.com/p.js',function(){
+	console.log('ddddd');
+	//debugger;
+	//sojs.run('mods/main');
+	//require('mods/main');
+});
+sojs.run('mods/main');*/
+require('mods/main');
 
 	
 </script>
