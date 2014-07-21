@@ -54,4 +54,5 @@ define(function(require,exports,module){
     var text = require('text!mods/tmpl.txt');
     console.log(text);
 
+    return computer
 });

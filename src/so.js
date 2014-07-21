@@ -301,7 +301,7 @@
     }
 
     p.onLoad = function() {
-        (opts.amd || this.entry) && this.onExec(); //if entry executed immediately
+        (opts.mode == 'amd' || this.entry) && this.onExec(); //if entry executed immediately
         this.emit('load', this);
     }
 
@@ -446,8 +446,8 @@
             id = SYNC_ID + guid(); //async mod id
         }
         var mod = sojs.getMod(id, deps, entry || callback);
-        if (!mod.sync && !opts.amd) {
-            var preloadMods = opts.preload; //preload mod
+        if (!mod.sync && opts.mode == 'cmd') { //preload mod
+            var preloadMods = opts.preload; 
             preloadMods && (mod.deps = preloadMods.concat(mod.deps));
             delete opts.preload;
         }
@@ -471,11 +471,8 @@
     }
 
     sojs.run = function(id, callback) {
-        opts.amd = false; //wether to support amd
+        opts.mode = 'cmd'; // exec mode is cmd
         return sojs.require(id, callback, true);
-        /*sojs.preload(function() {
-            sojs.require(id, callback)
-        })*/
     };
 
     sojs.preload = function(callback){
@@ -504,13 +501,14 @@
     }
 
     global.require = function(id, callback) {
-        opts.amd = true;
-        //return sojs.require(id, callback, true);
+        opts.mode = 'amd'; //exec mode is amd
         var mod = sojs.getMod(id);
-        if (!mod.sync) {
-            sojs.preload(function() {
+        if (!mod.sync) { //preload mod
+            var preloadMods = opts.preload;
+            sojs.require(preloadMods, function() {
                 sojs.require(id, callback, true)
-            })
+               delete opts.preload;
+            },true)
         }else{
             return sojs.require(id, callback, true)
         }
