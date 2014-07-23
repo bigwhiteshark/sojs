@@ -301,7 +301,7 @@
     }
 
     p.onLoad = function() {
-        (opts.mode == 'amd' || this.entry) && this.onExec(); //if entry executed immediately
+        (sojs.mode == 'amd' || this.entry) && this.onExec(); //if entry executed immediately
         this.emit('load', this);
     }
 
@@ -446,7 +446,7 @@
             id = SYNC_ID + guid(); //async mod id
         }
         var mod = sojs.getMod(id, deps, entry || callback);
-        if (!mod.sync && opts.mode == 'cmd') { //preload mod
+        if (!mod.sync && sojs.mode == 'cmd') { //preload mod
             var preloadMods = opts.preload; 
             preloadMods && (mod.deps = preloadMods.concat(mod.deps));
             delete opts.preload;
@@ -471,7 +471,7 @@
     }
 
     sojs.run = function(id, callback) {
-        opts.mode = 'cmd'; // exec mode is cmd
+        sojs.mode = opts.mode || 'cmd'; // exec mode is cmd
         return sojs.require(id, callback, true);
     };
 
@@ -501,7 +501,7 @@
     }
 
     global.require = function(id, callback) {
-        opts.mode = 'amd'; //exec mode is amd
+        sojs.mode = opts.mode || 'amd'; //exec mode is amd
         var mod = sojs.getMod(id);
         if (!mod.sync) { //preload mod
             var preloadMods = opts.preload;

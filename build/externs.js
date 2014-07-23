@@ -9,4 +9,5 @@ Object.paths;
 Object.map;
 Object.vars;
 Object.alias;
+Object.mode;
 Object.preload;
