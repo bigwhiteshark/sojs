@@ -152,7 +152,7 @@
                 }
             }
         }
-        elem.charset = 'utf-8';
+        elem.charset = opts.charset;
         elem.async = true;
         elem.defer = true;
         elem.src = url;
