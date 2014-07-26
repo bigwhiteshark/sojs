@@ -94,7 +94,7 @@
         if (lastC === "#") {
             return path.substring(0, last)
         }
-        return (/\.js|\/$/.test(path) || path.indexOf("?") > 0) ? path : path + JS_EXT
+        return (/\w+\.js|\/$/.test(path) || path.indexOf("?") > 0) ? path : path + JS_EXT
     }
 
     function canonical_uri(path, refUri) { //format url
