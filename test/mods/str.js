@@ -1,1 +1,0 @@
-define('I am sojs that a tiny javascript on-demand module loader.');

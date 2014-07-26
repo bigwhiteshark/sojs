@@ -97,7 +97,7 @@
         return (path.substring(last - 2) === JS_EXT || path.indexOf("?") > 0 || lastC === "/") ? path : path + JS_EXT
     }
 
-    function canonical_uri(path, refUri) {
+    function canonical_uri(path, refUri) { //format url
         var firstC = path.charAt(0);
         if (!ABSOLUTE_RE.test(path)) {
             if (firstC === '.') {
@@ -295,22 +295,24 @@
 
     p.onDefine = function(factory, deps) {
         this.factory = factory;
-        var mdeps = parse_deps(factory);
-        this.deps = unique(deps ? deps.concat(mdeps) : mdeps);
+        if (this.sync) { //if sync mod not parse dependent
+            this.deps = [];
+        } else {
+            var fdeps = parse_deps(factory);
+            this.deps = unique(deps ? deps.concat(fdeps) : fdeps);
+        }
         this.emit('define', this)
     }
 
     p.onLoad = function() {
-        (sojs.mode == 'amd' || this.entry) && this.onExec(); //if entry executed immediately
+        (sojs.mode === 'amd' || this.entry) && this.onExec(); //if entry executed immediately
         this.emit('load', this);
     }
 
     p.onExec = function() {
         var f = this.factory;
         require.id = this.id; //saved last mod's id to require relative mod.
-        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {},
-            this
-        ]) : f;
+        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -352,16 +354,16 @@
 
     p.loadMod = function(mod, callback, pmod) {
         mod = this.getMod(mod, [], pmod && is_sync(pmod.id), null, pmod);
-        var self = this;
         mod.once('load', callback);
+        var self = this;
         this.loadDefine(mod, function() { //recursive to parse mod dependency
             var deps = mod.deps,
                 count = deps && deps.length;
             if (!count) {
                 mod.onLoad()
             } else {
-                for (var i = 0; i < deps.length; i++) {
-                    self.loadMod(deps[i], function() {
+                for (var i = 0 , dep; dep = deps[i++];) {
+                    self.loadMod(dep, function() {
                         !--count && mod.onLoad()
                     }, mod)
                 }
@@ -386,16 +388,18 @@
         }
     }
 
-    p.getDefine = function(factory, id, deps) {
-        var script = get_current_script(),
-            id = id || script.id,
+    p.getDefine = function(id, deps, factory) {
+        var id = id || get_current_script().id,
             mod = this.modMap[id];
-        !mod && (mod = this.getMod(id, deps, null, true)); //sync mod
+        if (mod) { // get deps in define method 
+            deps && (mod.deps = mod.deps.concat(deps))
+        } else {
+            mod = this.getMod(id, [], null, true)
+        }
         mod.factory = factory;
-        deps && (mod.deps = mod.deps.concat(deps));
     }
 
-    p.resolve = function(id, refUri) { //copy from seajs
+    p.resolve = function(id, refUri) {
         if (!id) return ""
 
         id = parse_alias(id);
@@ -423,9 +427,9 @@
                     if (curr.slice(-1) !== "/") {
                         curr += "/"
                     }
-                    curr = canonical_uri(curr)
+                    curr = canonical_uri(curr);
                 }
-                opts[key] = curr
+                opts[key] = curr;
             }
         })
     }
@@ -446,10 +450,14 @@
             id = SYNC_ID + guid(); //async mod id
         }
         var mod = sojs.getMod(id, deps, entry || callback);
-        if (!mod.sync && sojs.mode == 'cmd') { //preload mod
-            var preloadMods = opts.preload; 
-            preloadMods && (mod.deps = preloadMods.concat(mod.deps));
-            delete opts.preload;
+        if (!mod.sync) {
+            var preloadMods = opts.preload;
+            if (preloadMods && sojs.mode === 'cmd') { //preload mod
+                preloadMods && (mod.deps = preloadMods.concat(mod.deps));
+                delete opts.preload;
+            }
+        } else { // if mod is sync, exec immediately 
+            mod.entry = true
         }
         if (callback) { //async require
             sojs.loadMod(mod, function(mod) {
@@ -470,34 +478,39 @@
         }
     }
 
+    sojs.preload = function(callback){
+        var preloadMods = opts.preload;
+        if(preloadMods && preloadMods.length){
+            sojs.require(preloadMods, function() {
+               callback();
+               delete opts.preload;
+            },true)
+        }
+    }
+
     sojs.run = function(id, callback) {
         sojs.mode = opts.mode || 'cmd'; // exec mode is cmd
         return sojs.require(id, callback, true);
+        /*sojs.preload(function() {
+            sojs.require(id, callback)
+        })*/
     };
-
-    sojs.preload = function(callback){
-        var preloadMods = opts.preload;
-        sojs.require(preloadMods, function() {
-           callback();
-           delete opts.preload;
-        },true)
-    }
 
     global.define = function(id, deps, factory) {
         var len = arguments.length;
         if (len == 1) { // define(factory)
             factory = id;
             id = null
-        } else if (len == 2) {
+        } else if (len == 2) { // define(deps, factory)
             factory = deps;
-            if (is_array(id)) { // define(deps, factory)
+            if (is_array(id)) { 
                 deps = id;
                 id = null
             } else { //define(id, factory)
                 deps = null
             }
         }
-        sojs.getDefine(factory, id, deps)
+        sojs.getDefine(id, deps, factory)
     }
 
     global.require = function(id, callback) {
@@ -507,9 +520,9 @@
             var preloadMods = opts.preload;
             sojs.require(preloadMods, function() {
                 sojs.require(id, callback, true)
-               delete opts.preload;
-            },true)
-        }else{
+                delete opts.preload;
+            }, true)
+        } else {
             return sojs.require(id, callback, true)
         }
     }
