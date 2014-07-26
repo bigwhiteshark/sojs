@@ -9,6 +9,7 @@
 <script type="text/javascript">
 	sojs.config({
 		base:'.',
+		mode:'amd',
 		preload:['http://sv.so.com/p.js','http://sv.so.com/l.js']
 	});
 
@@ -43,8 +44,8 @@
 
 		return Person
 	});
-	debugger;
-	var p = require(['mods/teacher']);
+	//debugger;
+	var p = require('mods/teacher');
 	//debugger;
 	/*var p = sojs.run('mods/teacher.js',function(){
 		require('mods/person.js');
@@ -85,7 +86,7 @@
 		//require('mods/main');
 	});*/
 
-	/*require('mods/main');*/
+	//require('mods/main');
 	/*require(['mods/main']);*/
 	/*require('mods/main',function(){
 		console.log('boot');
@@ -93,7 +94,7 @@
 	/*require(['mods/main'],function(){
 		console.log('boot');
 	});*/
-	/*sojs.run('mods/main');*/
+	sojs.run('mods/main');
 	//sojs.run(['mods/main']);
 	/*sojs.run('mods/main',function(){
 		console.log('boot');

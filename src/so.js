@@ -94,7 +94,7 @@
         if (lastC === "#") {
             return path.substring(0, last)
         }
-        return (path.substring(last - 2) === JS_EXT || path.indexOf("?") > 0 || lastC === "/") ? path : path + JS_EXT
+        return (/\.js|\/$/.test(path) || path.indexOf("?") > 0) ? path : path + JS_EXT
     }
 
     function canonical_uri(path, refUri) { //format url
@@ -450,15 +450,7 @@
             id = SYNC_ID + guid(); //async mod id
         }
         var mod = sojs.getMod(id, deps, entry || callback);
-        if (!mod.sync) {
-            var preloadMods = opts.preload;
-            if (preloadMods && sojs.mode === 'cmd') { //preload mod
-                preloadMods && (mod.deps = preloadMods.concat(mod.deps));
-                delete opts.preload;
-            }
-        } else { // if mod is sync, exec immediately 
-            mod.entry = true
-        }
+        mod.sync && (mod.entry = true);
         if (callback) { //async require
             sojs.loadMod(mod, function(mod) {
                 var args = [];
@@ -478,22 +470,17 @@
         }
     }
 
-    sojs.preload = function(callback){
-        var preloadMods = opts.preload;
-        if(preloadMods && preloadMods.length){
-            sojs.require(preloadMods, function() {
-               callback();
-               delete opts.preload;
-            },true)
-        }
-    }
-
     sojs.run = function(id, callback) {
-        sojs.mode = opts.mode || 'cmd'; // exec mode is cmd
-        return sojs.require(id, callback, true);
-        /*sojs.preload(function() {
-            sojs.require(id, callback)
-        })*/
+        sojs.mode = opts.mode || 'cmd'; // exec mode is cmd      
+        var preloadMods = opts.preload;
+        if(preloadMods){
+            sojs.require(preloadMods, function() {
+                sojs.require(id, callback, true)
+                delete opts.preload;
+            }, true)
+        }else{
+            return sojs.require(id, callback, true);
+        }
     };
 
     global.define = function(id, deps, factory) {
@@ -514,17 +501,7 @@
     }
 
     global.require = function(id, callback) {
-        sojs.mode = opts.mode || 'amd'; //exec mode is amd
-        var mod = sojs.getMod(id);
-        if (!mod.sync) { //preload mod
-            var preloadMods = opts.preload;
-            sojs.require(preloadMods, function() {
-                sojs.require(id, callback, true)
-                delete opts.preload;
-            }, true)
-        } else {
-            return sojs.require(id, callback, true)
-        }
+        return sojs.require(id, callback, true)
     }
 
 })(this)
