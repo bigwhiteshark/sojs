@@ -142,11 +142,11 @@ module 是一个对象，上面存储了与当前模块相关联的一些属性�
 
 **模块的加载启动**
 
-sojs.run Function
+**sojs.run Function**
 
 用来在页面中加载模块。
 
-sojs.run sojs.run(id, callback?)
+**sojs.run(id, callback?)**
 
 通过 run 方法，可以在页面中加载任意模块：
 
