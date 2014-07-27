@@ -102,21 +102,6 @@
 	/*sojs.run(['mods/main'],function(){
 		console.log('boot');
 	});*/
-	
-
-	function unique(arr,t){
-		with(arr) return !t ?
-	        join(",").match(/([^,]+)(?!.*\1)/ig) :
-	        reverse().join(",").match(/([^,]+)(?!.*\1)/ig).reverse();
-	}
-
-	function array_unique(arr) {
-      var o = {}, i, l = arr.length,
-        r = [];
-      for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
-      for (i in o) r.push(o[i]);
-      return r;
-    };
 </script>
 </body>
 </html>
