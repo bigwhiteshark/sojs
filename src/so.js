@@ -130,7 +130,7 @@
         var elem = doc.createElement('script');
 
         function onload() {
-            elem.onload = elem.onerror = elem.onreadystatechange = null
+            elem.onload = elem.onerror = elem.onreadystatechange = null;
             head.removeChild(elem);
             elem = null;
             callback()
