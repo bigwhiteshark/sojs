@@ -119,17 +119,12 @@
         return path;
     }
 
-    function unique(arr) {
-        var ret = [],
-            o = {};
-        for (var i = 0, val; val = arr[i++];) {
-            if (!o[val]) {
-                ret.push(val);
-                o[val] = 1
-            }
-        }
-        return ret
-    }
+    function array_unique(arr) { //ref http://jsperf.com/js-array-unique
+      var o = {}, i, l = arr.length, r = [];
+      for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
+      for (i in o) r.push(o[i]);
+      return r;
+    };
 
     function load_script(url, id, callback) {
         var elem = doc.createElement('script');
@@ -154,7 +149,6 @@
         }
         elem.charset = opts.charset;
         elem.async = true;
-        elem.defer = true;
         elem.src = url;
         elem.id = id;
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
@@ -188,8 +182,8 @@
     }
 
     function index_of(arr, val) {
-        for (var i = 0; i < arr.length; i++) {
-            if (arr[i] == val) {
+        for (var i = 0, l = arr.length; i < l; i++) {
+            if (arr[i] === val) {
                 return i;
             }
         }
@@ -212,8 +206,7 @@
     }
 
     function parse_paths(id) {
-        var paths = opts.paths,
-            m;
+        var paths = opts.paths, m;
         if (paths && (m = id.match(PATHS_RE)) && is_string(paths[m[1]])) {
             id = paths[m[1]] + m[2]
         }
@@ -299,7 +292,7 @@
             this.deps = [];
         } else {
             var fdeps = parse_deps(factory);
-            this.deps = unique(deps ? deps.concat(fdeps) : fdeps);
+            this.deps = array_unique(deps ? deps.concat(fdeps) : fdeps);
         }
         this.emit('define', this)
     }
@@ -358,7 +351,7 @@
         var self = this;
         this.loadDefine(mod, function() { //recursive to parse mod dependency
             var deps = mod.deps,
-                count = deps && deps.length;
+                count = deps.length;
             if (!count) {
                 mod.onLoad()
             } else {
@@ -401,15 +394,12 @@
 
     p.resolve = function(id, refUri) {
         if (!id) return ""
-
         id = parse_alias(id);
         id = parse_paths(id);
         id = parse_vars(id);
         id = normalize(id);
-
         var uri = canonical_uri(id, refUri)
         uri = parse_map(uri)
-
         return uri
     }
 
