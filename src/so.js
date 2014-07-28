@@ -235,6 +235,30 @@
         return ret
     }
 
+    function id2Mod(id,entry){
+        var deps;
+        if (is_array(id)) {
+            deps = id;
+            id = SYNC_ID + guid(); //async mod id
+        }
+        var mod = sojs.getMod(id, deps, entry);
+        mod.sync && (mod.entry = true);
+        return mod;
+    }
+
+    function async(id, callback){
+        var mod = id2Mod(id, true);
+        sojs.loadMod(mod, function(mod) {
+            var args = [];
+            for (var i = 0, l = mod.deps.length; i < l; i++) {
+                var depMod = sojs.getMod(mod.deps[i]);
+                args.push(depMod.exports)
+            }
+            args.push(mod.exports);
+            bind(callback, mod, args);
+        })
+    }
+
     function EventTarget() {
         this._listeners = {}
     };
@@ -327,11 +351,13 @@
         } else {
             var prevId = id;
             if (is_rel_url(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
-                var modName = id.slice(2);
-                if (require.prevId && is_rel_url(require.prevId) && (require.prevId.split('/').length > 1)) {
-                    require.id = require.id ? require.id.replace(require.prevId.slice(2), '') : opts.base
+                var modName = id.slice(2),
+                    rPrevId = require.prevId,
+                    rCurrId = require.id;
+                if (rPrevId && is_rel_url(rPrevId) && (rPrevId.split('/').length > 1)) {
+                    rCurrId = rCurrId ? rCurrId.replace(rPrevId.slice(2), '') : opts.base
                 }
-                id = dirname(pmod ? pmod.id : require.id) + modName;
+                id = dirname(pmod ? pmod.id : rCurrId) + modName;
             }
             require.prevId = prevId; //remeber last relative id
 
@@ -434,24 +460,11 @@
     sojs.opts = opts;
 
     sojs.require = function(id, callback, entry) {
-        var deps;
-        if (is_array(id)) {
-            deps = id;
-            id = SYNC_ID + guid(); //async mod id
-        }
-        var mod = sojs.getMod(id, deps, entry || callback);
-        mod.sync && (mod.entry = true);
+        sojs.mode = opts.mode || 'cmd'; // exec mode is cmd   
         if (callback) { //async require
-            sojs.loadMod(mod, function(mod) {
-                var args = [];
-                for (var i = 0, l = mod.deps.length; i < l; i++) {
-                    var depMod = sojs.getMod(mod.deps[i]);
-                    args.push(depMod.exports)
-                }
-                args.push(mod.exports);
-                bind(callback, mod, args);
-            })
+            async(id,callback);
         } else {
+            var mod = id2Mod(id, entry);
             if (entry && !mod.sync) {
                 sojs.loadMod(mod, EMPTY_FN)
             } else {
@@ -460,8 +473,7 @@
         }
     }
 
-    sojs.run = function(id, callback) {
-        sojs.mode = opts.mode || 'cmd'; // exec mode is cmd      
+    sojs.run = function(id, callback) {   
         var preloadMods = opts.preload;
         if(preloadMods){
             sojs.require(preloadMods, function() {
@@ -493,5 +505,6 @@
     global.require = function(id, callback) {
         return sojs.require(id, callback, true)
     }
+    require.async = sojs.require.async = async; //exports async method
 
 })(this)

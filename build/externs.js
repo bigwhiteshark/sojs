@@ -3,6 +3,7 @@ Object.sojs;
 Object.config;
 Object.define;
 Object.require;
+Object.async;
 Object.run;
 Object.base;
 Object.paths;
