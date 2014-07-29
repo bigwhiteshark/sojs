@@ -29,7 +29,7 @@
 
     // 在 http://example.com/js/a.js 中：
     require('./b');
-    // =&gt; http://example.com/js/b.js
+    // => http://example.com/js/b.js
 
 #### 顶级标识
 
@@ -39,7 +39,7 @@
 
     // 在模块代码里：
     require('jquery/1.7.1/jquery');
-    // =&gt; http://example.com/js/libs/jquery/1.7.1/jquery.js
+    // => http://example.com/js/libs/jquery/1.7.1/jquery.js
 
  `base` 路径的默认值，与 `so.js` 的路径相关：
 
@@ -63,7 +63,7 @@
 
     // 在模块代码里：
     require('jquery');
-    // =&gt; http://code.jquery.com/jquery.js
+    // => http://code.jquery.com/jquery.js
 
 #### 普通路径
 
@@ -71,15 +71,15 @@
 
     // 在 http://example.com/js/main.js 中：
     require('http://example.com/js/a');
-    // =&gt; http://example.com/js/a.js
+    // => http://example.com/js/a.js
 
     // 在 http://example.com/js/a.js 中：
     require('/js/b');
-    // =&gt; http://example.com/js/b.js
+    // => http://example.com/js/b.js
 
     // 在任何代码里：
     sojs.run('./c');
-    // =&gt; http://example.com/path/to/page/c.js
+    // => http://example.com/path/to/page/c.js
 
   `sojs.run(ids, ...)` 和 `define(id, ...)`中的模块标识始终是普通路径，因为这两个方法是在全局环境中执行的。
 
@@ -91,13 +91,13 @@
     // ".js" 后缀可以省略：
     require('http://example.com/js/a');
     require('http://example.com/js/a.js');
-    // =&gt; http://example.com/js/a.js
+    // => http://example.com/js/a.js
 
     // 当路径中有问号（"?"）时，不会自动添加后缀：
     require('http://example.com/js/a.json?callback=define');
-    // =&gt; http://example.com/js/a.json?callback=define
+    // => http://example.com/js/a.json?callback=define
 
     // 当路径以井号（"#"）结尾时，不会自动添加后缀，且会在解析时，去掉井号：
     require('http://example.com/js/a.json#');
-    // =&gt; http://example.com/js/a.json
+    // => http://example.com/js/a.json
 
