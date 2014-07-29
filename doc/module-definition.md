@@ -31,7 +31,7 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
 
     define(id?, deps?, factory);
 
-####id {#define-id}
+####id
 
  当前模块的唯一标识。该参数可选。如果没有指定，默认为模块所在文件的访问路径。如果指定的话，必须是顶级或绝对标识（不能是相对标识）。
 
@@ -39,7 +39,7 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
 
 当前模块所依赖的模块，是一个由模块标识组成的数组。该参数可选。如果没有指定，模块加载器会从`factory.toString()`中解析出该数组。
 
-####factory {#define-factory}
+####factory
 
 模块的工厂函数。模块初始化时，会调用且仅调用一次该工厂函数。`factory`可以是函数，也可以是对象、字符串等任意值，这时`module.exports` 会直接设置为`factory`值。
 
@@ -55,7 +55,7 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
 
     define('I am sojs that a tiny javascript on-demand module loader.');
 
-###exports {#exports}
+###exports
 
 `exports` 是一个对象，用来向外提供模块接口。
 
@@ -99,9 +99,9 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
 
 模块加载器不能获取到新赋给 `exports` 变量的值。请使用 `return` 或 `module.exports` 。
 
-###require {#require}
+###require
 
-####id {#require-id}
+####id
 
 当前模块的唯一标识。该参数必选。
 
@@ -128,7 +128,7 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
 
 **注意：** 在开发时，`require` 的书写需要遵循一些 简单约定。
 
-####callback {#require-callback}
+####callback
 
 模块内部异步加载模块，加载完成后执行的回调的方法;
 
@@ -151,7 +151,7 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
 
     });
 
-####require.async {#require.async}
+####require.async
 
 该方法可用来异步加载模块，并在加载完成后执行回调函数。与 `require(id, callback?)` 等价，不推荐使用。
 
