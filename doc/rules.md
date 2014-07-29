@@ -64,4 +64,9 @@
 
 偶尔会希望可以使用 `require` 来进行条件加载：
 
+    if (todayIsWeekend)
+      require("play");
+    else
+      require("work");
+
 但请牢记，从静态分析的角度来看，这个模块同时依赖 play 和 work 两个模块，加载器会把这两个模块文件都下载下来。这种情况下，推荐使用 `require(id,callback)` 异步来进行条件加载。

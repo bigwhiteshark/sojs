@@ -1,16 +1,16 @@
 ### 目录
 
 * 模块定义
-    * define(#define)
+    * [define](#define)
         * [id](#id)
         * [deps](#deps)
         * [factory](#factory)
     * [exports](#exports)
-    * require(#require)
+    * [require](#require)
         * [id](#id)
         * [callback](#callback)
         * [require.async](#require.async)
-    * module(#module)
+    * [module](#module)
         * module.id
         * module.deps
         * module.exports
