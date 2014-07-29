@@ -1,16 +1,16 @@
 ### 目录
 
 * 模块定义
-    * define[#define]
+    * define(#define)
         * [id](#id)
         * [deps](#deps)
         * [factory](#factory)
     * [exports](#exports)
-    * require[#require]
+    * require(#require)
         * [id](#id)
         * [callback](#callback)
         * [require.async](#require.async)
-    * module[#module]
+    * module(#module)
         * module.id
         * module.deps
         * module.exports
@@ -165,4 +165,48 @@ factory提供了3个参数：`require`, `exports`, `module`，用于模块的引
       require.async(['./c', './d'], function(c, d) {
         // do something
       });
+    });
+
+### module
+
+module 是一个对象，上面存储了与当前模块相关联的一些属性和方法。
+
+#### module.id
+
+当前模块的唯一标识。`require(module.id)` 必然返回此模块的 `exports` 
+
+    define(function(require, exports, module) {
+      console.log(module.id); // mods/printer
+      console.log(require(module.id) === exports); // true
+    });
+
+#### module.deps
+
+`module.deps` 是一个数组，表示当前模块的依赖列表。
+
+#### module.exports
+
+ `exports` 对象由模块系统创建，这不能满足开发者的所有需求，有时候会希望 `exports` 是某个类的实例。这时可用 `module.exports` 来实现：
+
+    define(function(require, exports, module) {
+        console.log(module.exports === exports); // true
+        module.exports = new SomeClass();
+        console.log(module.exports === exports); // false
+    });
+
+ 注意，对 `module.exports` 的赋值需要同步执行，它不能放在回调函数里。下面这样是不行的：
+
+a.js:
+
+    define(function(require, exports, module) {
+        setTimeout(function() {
+            module.exports = { n: "hello" };
+        }, 0);
+    });
+
+b.js:
+
+    define(function(require, exports, module) {
+       var a = require('./a');
+       console.log(a.n); // undefined
     });
