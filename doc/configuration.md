@@ -2,7 +2,7 @@
 
 * [config](#config)
     * [base](#base)
-    * [alias](#config)(#alias)
+    * [alias](#alias)
     * [preload](#preload)
     * [map](#map)
     * [charset](#charset)
