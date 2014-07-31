@@ -120,12 +120,10 @@
     }
 
     function array_unique(arr) { //ref http://jsperf.com/js-array-unique
-        var o = {},
-            i, l = arr.length,
-            r = [];
-        for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
-        for (i in o) r.push(o[i]);
-        return r;
+      var o = {}, i, l = arr.length, r = [];
+      for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
+      for (i in o) r.push(o[i]);
+      return r;
     };
 
     function load_script(url, id, callback) {
@@ -209,8 +207,7 @@
     }
 
     function parse_paths(id) {
-        var paths = opts.paths,
-            m;
+        var paths = opts.paths, m;
         if (paths && (m = id.match(PATHS_RE)) && is_string(paths[m[1]])) {
             id = paths[m[1]] + m[2]
         }
@@ -333,9 +330,7 @@
     p.onExec = function() {
         var f = this.factory;
         require.id = this.id; //saved last mod's id to require relative mod.
-        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {},
-            this
-        ]) : f;
+        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
