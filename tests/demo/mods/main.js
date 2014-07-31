@@ -47,12 +47,12 @@ define(function(require,exports,module){
 
     var util = require('mods/sub/cla');
 
-    var html = require('mods/tmpl.html');
+ /*   var html = require('mods/tmpl.html');
     console.log(html)
     var tpl = require('mods/tmpl.tpl');
     console.log(tpl);
     var text = require('text!mods/tmpl.txt');
-    console.log(text);
+    console.log(text);*/
 
     return computer
 });

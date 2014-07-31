@@ -120,10 +120,12 @@
     }
 
     function array_unique(arr) { //ref http://jsperf.com/js-array-unique
-      var o = {}, i, l = arr.length, r = [];
-      for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
-      for (i in o) r.push(o[i]);
-      return r;
+        var o = {},
+            i, l = arr.length,
+            r = [];
+        for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
+        for (i in o) r.push(o[i]);
+        return r;
     };
 
     function load_script(url, id, callback) {
@@ -147,9 +149,10 @@
                 }
             }
         }
-        elem.charset = opts.charset;
         elem.async = true;
         elem.src = url;
+        var charset = opts.charset;
+        elem.charset = charset ? is_function(charset) ? charset(url) : charset : 'utf-8';
         elem.id = id;
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
@@ -206,7 +209,8 @@
     }
 
     function parse_paths(id) {
-        var paths = opts.paths, m;
+        var paths = opts.paths,
+            m;
         if (paths && (m = id.match(PATHS_RE)) && is_string(paths[m[1]])) {
             id = paths[m[1]] + m[2]
         }
@@ -235,7 +239,7 @@
         return ret
     }
 
-    function id2Mod(id,entry){
+    function id2Mod(id, entry) {
         var deps;
         if (is_array(id)) {
             deps = id;
@@ -246,7 +250,7 @@
         return mod;
     }
 
-    function async(id, callback){
+    function async(id, callback) {
         var mod = id2Mod(id, true);
         sojs.loadMod(mod, function(mod) {
             var args = [];
@@ -329,7 +333,9 @@
     p.onExec = function() {
         var f = this.factory;
         require.id = this.id; //saved last mod's id to require relative mod.
-        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
+        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -381,7 +387,7 @@
             if (!count) {
                 mod.onLoad()
             } else {
-                for (var i = 0 , dep; dep = deps[i++];) {
+                for (var i = 0, dep; dep = deps[i++];) {
                     self.loadMod(dep, function() {
                         !--count && mod.onLoad()
                     }, mod)
@@ -462,7 +468,7 @@
     sojs.require = function(id, callback, entry) {
         sojs.mode = opts.mode || 'cmd'; // exec mode is cmd   
         if (callback) { //async require
-            async(id,callback);
+            async(id, callback);
         } else {
             var mod = id2Mod(id, entry);
             if (entry && !mod.sync) {
@@ -473,14 +479,14 @@
         }
     }
 
-    sojs.run = function(id, callback) {   
+    sojs.run = function(id, callback) {
         var preloadMods = opts.preload;
-        if(preloadMods){
+        if (preloadMods) {
             sojs.require(preloadMods, function() {
                 sojs.require(id, callback, true)
                 delete opts.preload;
             }, true)
-        }else{
+        } else {
             return sojs.require(id, callback, true);
         }
     };
@@ -492,7 +498,7 @@
             id = null
         } else if (len == 2) { // define(deps, factory)
             factory = deps;
-            if (is_array(id)) { 
+            if (is_array(id)) {
                 deps = id;
                 id = null
             } else { //define(id, factory)
