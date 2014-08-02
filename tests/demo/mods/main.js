@@ -1,5 +1,6 @@
 define(function(require,exports,module){
 	console.log('main mods');
+
 	var Computer = require('./computer');	
 	console.log(Computer);
 	var obj = require('mods/obj');
@@ -54,5 +55,16 @@ define(function(require,exports,module){
     var text = require('text!mods/tmpl.txt');
     console.log(text);*/
 
+
+   /* require('mods/style.css',function(){
+        console.log('load css style')
+    });*/
+
+   /* var testcss = require('mods/style.css');
+    console.log(testcss);*/
+
+   /* debugger;
+    var teststyle = require("style:#testcss{color:red;font-size:20px;width:200px;height: 30px;  border: 1px solid blue;}");
+*/
     return computer
 });

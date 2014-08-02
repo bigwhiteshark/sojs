@@ -24,8 +24,8 @@
         JS_EXT = '.js',
         doc = document,
         unique_num = 0,
-        head = doc.head || get_tags("head")[0] || doc.documentElement,
-        baseElement = get_tags('base', head)[0];
+        head = doc.head || getTags("head")[0] || doc.documentElement,
+        baseElement = getTags('base', head)[0];
 
     function guid() {
         return unique_num++;
@@ -35,14 +35,14 @@
         return Object.prototype.hasOwnProperty.call(obj, key);
     }
 
-    function for_each(o, fn) {
+    function forEach(o, fn) {
         for (var k in o) {
             if (has(o, k) && fn(o[k], k) === false)
                 return false
         }
     }
 
-    function strip_comments(code) {
+    function stripComments(code) {
         return code.replace(COMMENT_RE, '');
     }
 
@@ -62,12 +62,12 @@
         s.prototype = new f
     }
 
-    function get_tags(name, root) {
+    function getTags(name, root) {
         return (root || doc).getElementsByTagName(name)
     }
 
-    function parse_deps(factory) {
-        var code = strip_comments(factory + ''),
+    function parseDeps(factory) {
+        var code = stripComments(factory + ''),
             match, ret = [];
         while (match = DEPS_RE.exec(code)) {
             match[1] && ret.push(match[1])
@@ -75,11 +75,11 @@
         return ret
     }
 
-    function is_sync(id) {
+    function isSync(id) {
         return new RegExp(SYNC_ID).test(id)
     }
 
-    function is_rel_url(it) {
+    function isRelUrl(it) {
         return it.charAt(0) == '.';
     }
 
@@ -97,7 +97,7 @@
         return (/\w+\.js|\/$/.test(path) || path.indexOf("?") > 0) ? path : path + JS_EXT
     }
 
-    function canonical_uri(path, refUri) { //format url
+    function canonicalUri(path, refUri) { //format url
         var firstC = path.charAt(0);
         if (!ABSOLUTE_RE.test(path)) {
             if (firstC === '.') {
@@ -119,16 +119,18 @@
         return path;
     }
 
-    function array_unique(arr) { //ref http://jsperf.com/js-array-unique
+    function arrayUnique(arr) { //ref http://jsperf.com/js-array-unique
       var o = {}, i, l = arr.length, r = [];
       for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
       for (i in o) r.push(o[i]);
       return r;
     };
 
-    function load_script(url, id, callback) {
-        var elem = doc.createElement('script');
 
+
+    function scriptOnload(url, callback){
+        var elem = doc.createElement('script');
+        
         function onload() {
             elem.onload = elem.onerror = elem.onreadystatechange = null;
             head.removeChild(elem);
@@ -136,7 +138,7 @@
             callback()
         }
         if ('onload' in elem) {
-            elem.onload = onload;
+            elem.onload = elem.onerror = onload;
             elem.onerror = function() {
                 onload()
             }
@@ -147,15 +149,21 @@
                 }
             }
         }
+
         elem.async = true;
         elem.src = url;
+        return elem;
+    }
+
+    function request(url, id, assetOnLoad, callback) {
+        var elem = assetOnLoad(url, callback);
         var charset = opts.charset;
-        elem.charset = charset ? is_function(charset) ? charset(url) : charset : 'utf-8';
+        elem.charset = charset ? isFunction(charset) ? charset(url) : charset : 'utf-8';
         elem.id = id;
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
 
-    function get_current_script() {
+    function getCurrentScript() {
         if (doc.currentScript) { //firefox 4+,chrome29+
             return doc.currentScript;
         }
@@ -174,7 +182,7 @@
             stack = stack[0] == "(" ? stack.slice(1, -1) : stack;
             stack = stack.replace(/(:\d+)?:\d+$/i, "");
         }
-        var scripts = doc.scripts || get_tags("script", head);
+        var scripts = doc.scripts || getTags("script", head);
         for (var i = 0, script; script = scripts[i++];) {
             if (script.readyState === "interactive" || script.src === stack) {
                 return script;
@@ -182,7 +190,7 @@
         }
     }
 
-    function index_of(arr, val) {
+    function indexOf(arr, val) {
         for (var i = 0, l = arr.length; i < l; i++) {
             if (arr[i] === val) {
                 return i;
@@ -191,57 +199,68 @@
         return -1;
     }
 
-    function is_type(type) {
+    function isType(type) {
         return function(obj) {
             return EMPTY.toString.call(obj) == '[object ' + type + ']'
         }
     }
-    var is_string = is_type('String'),
-        is_function = is_type('Function'),
-        is_array = Array.isArray || is_type('Array'),
-        is_object = is_type('Object');
+    var isString = isType('String'),
+        isFunction = isType('Function'),
+        isArray = Array.isArray || isType('Array'),
+        isObject = isType('Object');
 
-    function parse_alias(id) {
+    function parseAlias(id) {
         var alias = opts.alias;
-        return alias && is_string(alias[id]) ? alias[id] : id
+        return alias && isString(alias[id]) ? alias[id] : id
     }
 
-    function parse_paths(id) {
+    function parsePaths(id) {
         var paths = opts.paths, m;
-        if (paths && (m = id.match(PATHS_RE)) && is_string(paths[m[1]])) {
+        if (paths && (m = id.match(PATHS_RE)) && isString(paths[m[1]])) {
             id = paths[m[1]] + m[2]
         }
         return id
     }
 
-    function parse_vars(id) {
+    function parseVars(id) {
         var vars = opts.vars;
         if (vars && id.indexOf("{") > -1) {
             id = id.replace(VARS_RE, function(m, key) {
-                return is_string(vars[key]) ? vars[key] : m
+                return isString(vars[key]) ? vars[key] : m
             })
         }
         return id
     }
 
-    function parse_map(uri) {
+    function parseMap(uri) {
         var map = opts.map,
             ret = uri;
         if (map) {
             for (var i = 0, rule; rule = map[i++];) {
-                ret = is_function(rule) ? (rule(uri) || uri) : uri.replace(rule[0], rule[1]);
+                ret = isFunction(rule) ? (rule(uri) || uri) : uri.replace(rule[0], rule[1]);
                 if (ret !== uri) break // Only apply the first matched rule                
             }
         }
         return ret
     }
 
+    /*function isTextBlock(id){
+        //var id = id.match(/^\w+\|/g);
+        var textType = id.substring(0,id.indexOf(':'));
+        if(textType === 'css'){
+            return  SYNC_ID + guid() + '.' + textType;
+        }
+        return id;
+    }*/
+
     function id2Mod(id, entry) {
         var deps;
-        if (is_array(id)) {
+        if (isArray(id)) {
             deps = id;
             id = SYNC_ID + guid(); //async mod id
-        }
+        }/*else{
+            id = isTextBlock(id);
+        }*/
         var mod = sojs.getMod(id, deps, entry);
         mod.sync && (mod.entry = true);
         return mod;
@@ -267,7 +286,7 @@
     p.on = function(type, listener) {
         var listeners = this._listeners || (this._listeners = {});
         listeners[type] || (listeners[type] = []);
-        if (index_of(listeners[type], listener) == -1) {
+        if (indexOf(listeners[type], listener) == -1) {
             listeners[type].push(listener);
         }
         return listener;
@@ -295,7 +314,7 @@
         if (!this._listeners) return;
         var listeners = this._listeners[type];
         if (listeners) {
-            var index = index_of(listeners, listener);
+            var index = indexOf(listeners, listener);
             index !== -1 && listeners.splice(index, 1);
         }
     };
@@ -316,8 +335,8 @@
         if (this.sync) { //if sync mod not parse dependent
             this.deps = [];
         } else {
-            var fdeps = parse_deps(factory);
-            this.deps = array_unique(deps ? deps.concat(fdeps) : fdeps);
+            var fdeps = parseDeps(factory);
+            this.deps = arrayUnique(deps ? deps.concat(fdeps) : fdeps);
         }
         this.emit('define', this)
     }
@@ -330,7 +349,7 @@
     p.onExec = function() {
         var f = this.factory;
         require.id = this.id; //saved last mod's id to require relative mod.
-        var ret = is_function(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
+        var ret = isFunction(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -351,11 +370,11 @@
             return id
         } else {
             var prevId = id;
-            if (is_rel_url(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
+            if (isRelUrl(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
                 var modName = id.slice(2),
                     rPrevId = require.prevId,
                     rCurrId = require.id;
-                if (rPrevId && is_rel_url(rPrevId) && (rPrevId.split('/').length > 1)) {
+                if (rPrevId && isRelUrl(rPrevId) && (rPrevId.split('/').length > 1)) {
                     rCurrId = rCurrId ? rCurrId.replace(rPrevId.slice(2), '') : opts.base
                 }
                 id = dirname(pmod ? pmod.id : rCurrId) + modName;
@@ -373,7 +392,7 @@
     }
 
     p.loadMod = function(mod, callback, pmod) {
-        mod = this.getMod(mod, [], pmod && is_sync(pmod.id), null, pmod);
+        mod = this.getMod(mod, [], pmod && isSync(pmod.id), null, pmod);
         mod.once('load', callback);
         var self = this;
         this.loadDefine(mod, function() { //recursive to parse mod dependency
@@ -398,10 +417,10 @@
         mod.once('define', callback);
         this.emit('request', mod);
         if (!mod.requested) {
-            if (is_sync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
+            if (isSync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
                 mod.onDefine(mod.factory, mod.deps)
             } else {
-                load_script(mod.uri, mod.id, function() {
+                request(mod.uri, mod.id, mod.assetOnLoad || scriptOnload, function() {
                     mod.onDefine(mod.factory, mod.deps)
                 });
             }
@@ -409,7 +428,7 @@
     }
 
     p.getDefine = function(id, deps, factory) {
-        var id = id || get_current_script().id,
+        var id = id || getCurrentScript().id,
             mod = this.modMap[id];
         if (mod) { // get deps in define method 
             deps && (mod.deps = mod.deps.concat(deps))
@@ -421,30 +440,30 @@
 
     p.resolve = function(id, refUri) {
         if (!id) return ""
-        id = parse_alias(id);
-        id = parse_paths(id);
-        id = parse_vars(id);
+        id = parseAlias(id);
+        id = parsePaths(id);
+        id = parseVars(id);
         id = normalize(id);
-        var uri = canonical_uri(id, refUri)
-        uri = parse_map(uri)
+        var uri = canonicalUri(id, refUri)
+        uri = parseMap(uri)
         return uri
     }
 
     p.config = function(options) {
-        for_each(options, function(curr, key) {
+        forEach(options, function(curr, key) {
             var prev = opts[key];
-            if (prev && is_object(prev)) {
+            if (prev && isObject(prev)) {
                 for (var k in curr) {
                     prev[k] = curr[k]
                 }
             } else {
-                if (is_array(prev)) {
+                if (isArray(prev)) {
                     curr = prev.concat(curr)
                 } else if (key === "base") {
                     if (curr.slice(-1) !== "/") {
                         curr += "/"
                     }
-                    curr = canonical_uri(curr);
+                    curr = canonicalUri(curr);
                 }
                 opts[key] = curr;
             }
@@ -455,7 +474,7 @@
         opts = EMPTY,
         cwd = dirname(location.href),
         m = cwd.match(DOMAIN_RE);
-    opts.dir = opts.base = (dirname(get_current_script().src) || cwd),
+    opts.dir = opts.base = (dirname(getCurrentScript().src) || cwd),
     opts.cwd = cwd,
     opts.domain = m ? m[0] : '';
     sojs.opts = opts;
@@ -493,7 +512,7 @@
             id = null
         } else if (len == 2) { // define(deps, factory)
             factory = deps;
-            if (is_array(id)) {
+            if (isArray(id)) {
                 deps = id;
                 id = null
             } else { //define(id, factory)
