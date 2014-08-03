@@ -52,8 +52,7 @@
             //On the iPhone/ipod sometimes setItem will appear QUOTA_EXCEEDED_ERR errors,
             //then the general before setItem first removeItem to ok
             if (e.name.toUpperCase().indexOf('QUOTA') >= 0) {
-                var item;
-                var tempScripts = [];
+                var item, tempScripts = [];
 
                 for (item in storage) {
                     if (item.indexOf(storagePrefix) === 0) {
