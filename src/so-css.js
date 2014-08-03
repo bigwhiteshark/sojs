@@ -7,8 +7,7 @@
 (function(global) {
     var UA = navigator.userAgent,
         // `onload` event is supported in WebKit since 535.23
-        // Ref:
-        //  - https://bugs.webkit.org/show_activity.cgi?id=38995
+        // Ref:  - https://bugs.webkit.org/show_activity.cgi?id=38995
         isOldWebKit = Number(UA.replace(/.*AppleWebKit\/(\d+)\..*/, '$1')) < 536;
 
     function cssOnload(url, callback) {
@@ -27,23 +26,7 @@
             }, 1) // Begin after elem insertion
             return
         }
-
-        function onload() {
-            elem.onload = elem.onerror = elem.onreadystatechange = null;
-            elem = null;
-            callback()
-        }
-
-        if (supportOnload) {
-            elem.onload = elem.onerror = onload;
-        } else {
-            elem.onreadystatechange = function() {
-                if (/loaded|complete/.test(elem.readyState)) {
-                    onload()
-                }
-            }
-        }
-
+        elemOnload(elem, callback, true);
         elem.rel = "stylesheet";
         elem.href = url;
         return elem;

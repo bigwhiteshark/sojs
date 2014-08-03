@@ -124,16 +124,12 @@
       for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
       for (i in o) r.push(o[i]);
       return r;
-    };
+    }
 
-
-
-    function scriptOnload(url, callback){
-        var elem = doc.createElement('script');
-        
+    function elemOnload(elem, callback, keep){
         function onload() {
             elem.onload = elem.onerror = elem.onreadystatechange = null;
-            head.removeChild(elem);
+            !keep && head.removeChild(elem);
             elem = null;
             callback()
         }
@@ -149,7 +145,11 @@
                 }
             }
         }
+    }
 
+    function scriptOnload(url, callback){
+        var elem = doc.createElement('script');
+        elemOnload(elem, callback);
         elem.async = true;
         elem.src = url;
         return elem;
@@ -244,23 +244,12 @@
         return ret
     }
 
-    /*function isTextBlock(id){
-        //var id = id.match(/^\w+\|/g);
-        var textType = id.substring(0,id.indexOf(':'));
-        if(textType === 'css'){
-            return  SYNC_ID + guid() + '.' + textType;
-        }
-        return id;
-    }*/
-
     function id2Mod(id, entry) {
         var deps;
         if (isArray(id)) {
             deps = id;
             id = SYNC_ID + guid(); //async mod id
-        }/*else{
-            id = isTextBlock(id);
-        }*/
+        }
         var mod = sojs.getMod(id, deps, entry);
         mod.sync && (mod.entry = true);
         return mod;
@@ -356,6 +345,7 @@
         delete this.factory;
         delete this.sync;
         delete this.pmod;
+        delete this.assetOnLoad;
         return this.exports
     }
 
