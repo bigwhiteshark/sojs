@@ -60,7 +60,7 @@ define(function(require,exports,module){
         console.log('load css style')
     });*/
 
-    var testcss = require('mods/style.css');
+   // var testcss = require('mods/style.css');
 
    /* debugger;
     var teststyle = require("style:#testcss{color:red;font-size:20px;width:200px;height: 30px;  border: 1px solid blue;}");
