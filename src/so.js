@@ -256,8 +256,8 @@
     }
 
     function async(id, callback) {
-        var mod = id2Mod(id, true);
-        sojs.loadMod(mod, function(mod) {
+        var mod = id2Mod(isArray(id) ? id : [id], true);
+        sojs.loadMod(mod, function() {
             var args = [];
             for (var i = 0, l = mod.deps.length; i < l; i++) {
                 var depMod = sojs.getMod(mod.deps[i]);
