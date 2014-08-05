@@ -1,8 +1,7 @@
 define(function(require,exports,module){
 	console.log('main mods');
     //debugger;
-    require('lib/underscore');
-    console.log(_);
+    //require('lib/underscore');
 	var Computer = require('./computer');	
 	console.log(Computer);
 	var obj = require('mods/obj');

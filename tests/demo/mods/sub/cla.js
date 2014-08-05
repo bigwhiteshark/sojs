@@ -1,7 +1,7 @@
 define(function(require,exports,module){
 	require('./rel');
 	//console.log(require.lastId,'ddddddddddd');
-	require('./child/chi');
+	require('./child/dep');
 	//console.log(require.lastId,'ssssssssss');
 	require('./view');
 	require('mods/help')

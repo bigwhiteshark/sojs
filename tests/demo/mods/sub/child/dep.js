@@ -1,13 +1,13 @@
 define(function(require,exports,module){
-	function Chi(){
+	function Dep(){
 	}
-	var p = Chi.prototype;
+	var p = Dep.prototype;
 	p.add = function(a,b){
 		return a+b
 	}
 	p.say = function(msg){
 		console.log(msg)
 	}
-	console.log('Chi mods')
-	module.exports = Chi
+	console.log('sub dep mods')
+	module.exports = Dep
 })

@@ -25,7 +25,8 @@
         doc = document,
         unique_num = 0,
         head = doc.head || getTags("head")[0] || doc.documentElement,
-        baseElement = getTags('base', head)[0];
+        baseElement = getTags('base', head)[0],
+        context={};
 
     function guid() {
         return unique_num++;
@@ -337,7 +338,8 @@
 
     p.onExec = function() {
         var f = this.factory;
-        require.id = this.id; //saved last mod's id to require relative mod.
+        this.deps.length && (context.pmod = this);
+        context.id = this.id; //saved last mod's id to require relative mod.
         var ret = isFunction(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
@@ -362,14 +364,15 @@
             var prevId = id;
             if (isRelUrl(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
                 var modName = id.slice(2),
-                    rPrevId = require.prevId,
-                    rCurrId = require.id;
+                    rPrevId = context.prevId,
+                    rCurrId = context.id;
                 if (rPrevId && isRelUrl(rPrevId) && (rPrevId.split('/').length > 1)) {
                     rCurrId = rCurrId ? rCurrId.replace(rPrevId.slice(2), '') : opts.base
                 }
+                pmod || (pmod = context.pmod); 
                 id = dirname(pmod ? pmod.id : rCurrId) + modName;
             }
-            require.prevId = prevId; //remeber last relative id
+            context.prevId = prevId; //remeber last relative id
 
             var mod = this.modMap[id];
             if (!mod) {

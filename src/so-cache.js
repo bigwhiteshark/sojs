@@ -106,7 +106,7 @@
         if (storeData) {
             mod.requested = true;
             var factory = storeData.factory;
-            if (/^function/img.test(factory)) {
+            if (/^function/img.test(factory)) { // factory is function,
                 factory = /\{((.|[\r\n\t\s])*)\}$/img.exec(factory)[0];
                 factory = new Function('require,exports,module', factory);
             }

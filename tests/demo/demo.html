@@ -3,7 +3,7 @@
 <meta charset='utf-8'>
 <head>
 	<script type="text/javascript" src="../../src/so.js"></script>
-	<script type="text/javascript" src="../../src/so-cache.js"></script>
+	<!--<script type="text/javascript" src="../../src/so-cache.js"></script>-->
 	<!--<script type="text/javascript" src="../../src/so-text.js"></script>-->
 	<!--<script type="text/javascript" src="../../src/so-css.js"></script>-->
 </head>
@@ -17,7 +17,7 @@
 	});
 
 	//inline mods,only sync mode
-	define('mods/teacher',['mods/person'],function(require,exports,module){
+	/*define('mods/teacher',['mods/person'],function(require,exports,module){
 		require('mods/person');
 		console.log('teacher mods');
 		function Teacher(){
@@ -28,10 +28,10 @@
 			console.log(name)
 		}
 		module.exports = Teacher
-	})
+	})*/
 
 
-	define('mods/person', function(require, exports, module) {
+	/*define('mods/person', function(require, exports, module) {
 		//var Teacher = require('mods/teacher.js');
 		console.log('person mods');
 		function Person(){
@@ -40,21 +40,21 @@
 		var p = Person.prototype;
 		p.output = function(a){
 			console.log(a)
-		}
+		}*/
 
 		/*var t = new Teacher();
 		t.teaching('math course')*/
 
-		return Person
-	});
+	/*	return Person
+	});*/
 	//debugger;
-	var p = require('mods/teacher');
+	//var p = require('mods/teacher');
 	//debugger;
 	/*var p = sojs.run('mods/teacher.js',function(){
 		require('mods/person.js');
 		//require('mods/teacher.js');
 	});*/
-	console.log(p);
+	//console.log(p);
 
 	/*sojs.use('mods/main',function(a){
 		console.log(a)
@@ -103,7 +103,7 @@
 	/*require.async(['mods/main'],function(){
 		console.log('boot');
 	});*/
-	sojs.run('mods/main');
+	//sojs.run('mods/main');
 	//sojs.run(['mods/main']);
 	/*sojs.run('mods/main',function(){
 		console.log('boot');
@@ -111,6 +111,10 @@
 	/*sojs.run(['mods/main'],function(){
 		console.log('boot');
 	});*/
+
+	sojs.run('mods/main',function(main){
+		console.log(main,'fffffffffffffff');
+	});
 </script>
 </body>
 </html>
