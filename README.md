@@ -3,14 +3,14 @@ sojs,so open, so fast, so simple。so,编程就是如此简单。
 
 sojs提供cdn引用地址:
 
-		http://s0.qhimg.com/!b3e3e875/so.js
-		http://s1.qhimg.com/!b3e3e875/so.js
-		http://s2.qhimg.com/!b3e3e875/so.js
+		http://s0.qhimg.com/!638c4260/so.js
+		http://s1.qhimg.com/!638c4260/so.js
+		http://s2.qhimg.com/!638c4260/so.js
 
 		…………………
 
-		http://s8.qhimg.com/!b3e3e875/so.js
-		http://s9.qhimg.com/!b3e3e875/so.js
+		http://s8.qhimg.com/!638c4260/so.js
+		http://s9.qhimg.com/!638c4260/so.js
 
 ## 简介
 一个极简极小的符合AMD规范按需模块加载器，特点是小巧、简洁、轻量级，目的使开发者能够快速上手，无学习成本，按模块开发。
