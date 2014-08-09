@@ -1,5 +1,13 @@
 define(function(require,exports,module){
 	console.log('main mods');
+    require('http://sv.so.com/p.js');
+    require('http://sv.so.com/l.js');
+   /* var img = require("http://p2.qhimg.com/t01dd5e839f1597aae2.png",function(arg){
+        console.log(arg);
+        //document.body.appendChild(arg);
+    });
+    var img = require("http://p2.qhimg.com/t01dd5e839f1597aae2.png");
+    document.body.appendChild(img);*/
     //debugger;
     require('lib/underscore');
     console.log(_);

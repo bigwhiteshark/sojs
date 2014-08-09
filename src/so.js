@@ -156,11 +156,17 @@
         return elem;
     }
 
-    function request(url, id, assetOnLoad, callback) {
+    function request(mod, callback) {
+        var url = mod.uri,
+            assetOnLoad = mod.assetOnLoad || scriptOnload;
         var elem = assetOnLoad(url, callback);
         var charset = opts.charset;
         elem.charset = charset ? isFunction(charset) ? charset(url) : charset : 'utf-8';
-        elem.id = id;
+        elem.id = mod.id;
+        if(elem.nodeName ==='IMG'){ //for image plugin
+            mod.factory = elem;
+           return; 
+        } 
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
 
@@ -413,7 +419,7 @@
             if (isSync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
                 mod.onDefine(mod.factory, mod.deps)
             } else {
-                request(mod.uri, mod.id, mod.assetOnLoad || scriptOnload, function() {
+                request(mod, function() {
                     mod.onDefine(mod.factory, mod.deps)
                 });
             }

@@ -6,14 +6,19 @@
 	<!--<script type="text/javascript" src="../../src/so-cache.js"></script>-->
 	<!--<script type="text/javascript" src="../../src/so-text.js"></script>-->
 	<!--<script type="text/javascript" src="../../src/so-css.js"></script>-->
+	<!--<script type="text/javascript" src="../../src/so-image.js"></script>-->
 </head>
 <body>
 <div id='testcss'>测试so-css.js</div>
 <script type="text/javascript">
 	sojs.config({
 		base:'.',
+		map:[['http://sv.so.com/p.js','mods/p.js']],
 		mode:'cmd'/*,
 		preload:['http://sv.so.com/p.js','http://sv.so.com/l.js']*/
+	});
+	sojs.config({
+		map:[['http://sv.so.com/l.js','mods/l.js']]
 	});
 
 	//inline mods,only sync mode
