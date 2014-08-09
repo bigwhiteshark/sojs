@@ -6,6 +6,7 @@
  */
 (function(global) {
     var UA = navigator.userAgent,
+        IS_CSS_RE = /\.css(?:\?|$)/i,
         // `onload` event is supported in WebKit since 535.23
         // Ref:  - https://bugs.webkit.org/show_activity.cgi?id=38995
         isOldWebKit = Number(UA.replace(/.*AppleWebKit\/(\d+)\..*/, '$1')) < 536;
@@ -71,7 +72,7 @@
         if ((m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/))) {
             name = m[1];
         }
-        if (name && name === '.css') {
+        if (name && IS_CSS_RE.test(name)) {
             id = id + '#';
             mod.uri = sojs.resolve(id);
             mod.assetOnLoad = cssOnload;
