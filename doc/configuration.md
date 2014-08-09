@@ -2,6 +2,7 @@
 
 * [config](#config)
     * [base](#base)
+    * [mode](#mode)
     * [alias](#alias)
     * [paths](#paths)
     * [vars](#vars)
@@ -13,28 +14,39 @@
 
 可以使用 `config` 方法来配置加载器。
 
-    sojs.config({
-      alias: {
-        'es5-safe': 'es5-safe/0.9.2/es5-safe',
-        'json': 'json/1.0.1/json',
-        'jquery': 'jquery/1.7.1/jquery'
-      },
-      preload: [
-        Function.prototype.bind ? '' : 'es5-safe',
-        this.JSON ? '' : 'json'
-      ],
-      map: [
-        ['http://example.com/js/app/', 'http://localhost/js/app/']
-      ],
-      base: 'http://example.com/path/to/libs/',
-      charset: 'utf-8'
-    });
+      sojs.config({
+          alias: { // 别名配置
+              'es5-safe': 'gallery/es5-safe/0.9.3/es5-safe',
+              'json': 'gallery/json/1.0.2/json',
+              'jquery': 'jquery/jquery/1.10.1/jquery'
+          },
+          paths: { // 路径配置
+              'gallery': 'https://example.com/gallery'
+          }, 
+          vars: { // 变量配置
+              'locale': 'zh-cn'
+          },
+          map: [ // 映射配置
+              ['http://example.com/js/app/', 'http://localhost/js/app/']
+          ],
+          preload: [  // 预加载项
+              Function.prototype.bind ? '' : 'es5-safe',
+              this.JSON ? '' : 'json'
+          ],
+          mode:'cmd', //执行机制,默认为cmd,懒执行，依赖就近原则
+          base: 'http://example.com/path/to/base/', // so.js 的基础路径
+          charset: 'utf-8' // 文件编码
+      });
 
 支持以下配置选项：
 
 #### base `String`
 
 sojs 在解析顶级标识时，会相对 `base` 路径来解析。详情请参阅 [顶级标识](module-identifier.md#top-level-id)。
+
+#### mode `String`
+
+sojs 在引用模块时的执行机制,默认为cmd,懒执行，依赖就近原则。如果设置为'amd'，则为预执行，依赖前置原则。
 
 #### alias `Object`
 
