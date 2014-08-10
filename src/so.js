@@ -26,7 +26,7 @@
         unique_num = 0,
         head = doc.head || getTags("head")[0] || doc.documentElement,
         baseElement = getTags('base', head)[0],
-        context={};
+        context = {};
 
     function guid() {
         return unique_num++;
@@ -121,13 +121,15 @@
     }
 
     function arrayUnique(arr) { //ref http://jsperf.com/js-array-unique
-      var o = {}, i, l = arr.length, r = [];
-      for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
-      for (i in o) r.push(o[i]);
-      return r;
+        var o = {},
+            i, l = arr.length,
+            r = [];
+        for (i = 0; i < l; i += 1) o[arr[i]] = arr[i];
+        for (i in o) r.push(o[i]);
+        return r;
     }
 
-    function elemOnload(elem, callback, keep){
+    function elemOnload(elem, callback, keep) {
         function onload() {
             elem.onload = elem.onerror = elem.onreadystatechange = null;
             !keep && head.removeChild(elem);
@@ -148,7 +150,7 @@
         }
     }
 
-    function scriptOnload(url, callback){
+    function scriptOnload(url, callback) {
         var elem = doc.createElement('script');
         elemOnload(elem, callback);
         elem.async = true;
@@ -163,10 +165,10 @@
         var charset = opts.charset;
         elem.charset = charset ? isFunction(charset) ? charset(url) : charset : 'utf-8';
         elem.id = mod.id;
-        if(elem.nodeName ==='IMG'){ //for image plugin
+        if (elem.nodeName === 'IMG') { //for image plugin
             mod.factory = elem;
-           return; 
-        } 
+            return;
+        }
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
 
@@ -222,7 +224,8 @@
     }
 
     function parsePaths(id) {
-        var paths = opts.paths, m;
+        var paths = opts.paths,
+            m;
         if (paths && (m = id.match(PATHS_RE)) && isString(paths[m[1]])) {
             id = paths[m[1]] + m[2]
         }
@@ -338,15 +341,17 @@
     }
 
     p.onLoad = function() {
-        (sojs.mode === 'amd' || this.entry) && this.onExec(); //if entry executed immediately
+        (opts.mode === 'amd' || this.entry) && this.onExec(); //if entry executed immediately
         this.emit('load', this);
     }
 
     p.onExec = function() {
         var f = this.factory;
         this.deps.length && (context.pmod = this);
-        context.id = this.id; //saved last mod's id to require relative mod.
-        var ret = isFunction(f) ? bind(f, global, [sojs.require, this.exports = {}, this]) : f;
+        context.execId = this.id; //saved last mod's id to require relative mod.
+        var ret = isFunction(f) ? bind(f, global, [sojs.require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -367,18 +372,21 @@
         if (id instanceof Mod) {
             return id
         } else {
+            context.id = id;
+            this.emit('identify', context); //for plugin
+            id = context.id;
             var prevId = id;
             if (isRelUrl(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
                 var modName = id.slice(2),
                     rPrevId = context.prevId,
-                    rCurrId = context.id;
+                    execId = context.execId;
                 if (rPrevId && isRelUrl(rPrevId) && (rPrevId.split('/').length > 1)) {
-                    rCurrId = rCurrId ? rCurrId.replace(rPrevId.slice(2), '') : opts.base
+                    execId = execId ? execId.replace(rPrevId.slice(2), '') : opts.base
                 }
-                pmod || (pmod = context.pmod); 
-                id = dirname(pmod ? pmod.id : rCurrId) + modName;
+                pmod || (pmod = context.pmod);
+                id = dirname(pmod ? pmod.id : execId) + modName;
             }
-            context.prevId = prevId; //remeber last relative id
+            context.prevId = prevId; //remeber last id
 
             var mod = this.modMap[id];
             if (!mod) {
@@ -475,11 +483,11 @@
         m = cwd.match(DOMAIN_RE);
     opts.dir = opts.base = (dirname(getCurrentScript().src) || cwd),
     opts.cwd = cwd,
+    opts.mode = 'cmd', // exec mode is cmd 
     opts.domain = m ? m[0] : '';
     sojs.opts = opts;
 
     sojs.require = function(id, callback, entry) {
-        sojs.mode = opts.mode || 'cmd'; // exec mode is cmd   
         if (callback) { //async require
             async(id, callback);
         } else {

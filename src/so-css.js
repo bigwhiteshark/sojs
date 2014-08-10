@@ -5,8 +5,9 @@
  * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
-    var UA = navigator.userAgent,
+        var UA = navigator.userAgent,
         IS_CSS_RE = /\.css(?:\?|$)/i,
+        IS_CSS_TEXT_RE = /^[\.\#]?\w+[^{]+\{[^}]*\}/,
         // `onload` event is supported in WebKit since 535.23
         // Ref:  - https://bugs.webkit.org/show_activity.cgi?id=38995
         isOldWebKit = Number(UA.replace(/.*AppleWebKit\/(\d+)\..*/, '$1')) < 536;
@@ -66,6 +67,37 @@
         }, 1)
     }
 
+    function styleOnload(cssText) {
+        var elem = doc.createElement('style');
+        elem.type = 'text/css';
+        if (elem.styleSheet) { // IE
+            if (doc.getElementsByTagName('style').length > 31) {
+                throw new Error('Exceed the maximal count of style tags in IE')
+            }
+            elem.styleSheet.cssText += cssText
+        } else {
+            elem.appendChild(doc.createTextNode(cssText))
+        }
+        head.appendChild(elem);
+    }
+
+    var cssTexts = {};
+    sojs.on('identify', function(ctx) {
+        var id = ctx.id;
+        if (IS_CSS_TEXT_RE.test(id)) {
+            var cssText = id,
+                id = SYNC_ID + guid() + '.css';
+            forEach(cssTexts, function(v, key) {
+                if (v === cssText) {
+                    id = key;
+                    return false;
+                }
+            });
+            cssTexts[id] = cssText;
+            ctx.id = id;
+        }
+    })
+
     sojs.on('resolve', function(mod) {
         var id = mod.id,
             m, name;
@@ -73,9 +105,14 @@
             name = m[1];
         }
         if (name && IS_CSS_RE.test(name)) {
+            var cssText = cssTexts[id];
             id = id + '#';
             mod.uri = sojs.resolve(id);
-            mod.assetOnLoad = cssOnload;
+            if (cssText) {
+                styleOnload(cssText);
+            } else {
+                mod.assetOnLoad = cssOnload;
+            }
         }
     })
 })(this);
