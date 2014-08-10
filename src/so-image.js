@@ -1,5 +1,5 @@
 /**
- * Created by yangxinming on 14-8-2.
+ * Created by yangxinming on 14-8-9.
  * https://github.com/bigwhiteshark/sojs
  * author:bigwhiteshark
  * blog:http://bigwhiteshark.github.io/blog/
