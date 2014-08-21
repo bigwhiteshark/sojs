@@ -5,6 +5,7 @@
  * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
+    "use strict";
     if (global.sojs) {
         return
     }
@@ -81,7 +82,7 @@
     }
 
     function isRelUrl(it) {
-        return it.charAt(0) == '.';
+        return isString(it) && it.charAt(0) == '.';
     }
 
     function dirname(path) {
@@ -278,6 +279,14 @@
         })
     }
 
+    function relToAbsId(id,pId){        
+        if (isRelUrl(id) && pId) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
+            var modName = id.slice(2);
+            id = dirname(pId) + modName;
+        }
+        return id;
+    }
+
     function EventTarget() {
         this._listeners = {}
     };
@@ -346,12 +355,18 @@
     }
 
     p.onExec = function() {
-        var f = this.factory;
-        this.deps.length && (context.pmod = this);
-        context.execId = this.id; //saved last mod's id to require relative mod.
-        var ret = isFunction(f) ? bind(f, global, [sojs.require, this.exports = {},
-            this
-        ]) : f;
+        var f = this.factory,pId = this.id;
+        var require = function(id,callback){
+            if(isArray(id)){
+                forEach(id,function(v,k){
+                    id[k] = relToAbsId(v,pId)
+                })
+            }else{
+                id = relToAbsId(id,pId);
+            }
+            return sojs.require(id,callback);
+        };
+        var ret = isFunction(f) ? bind(f, global, [require, this.exports = {}, this]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
@@ -375,19 +390,7 @@
             context.id = id;
             this.emit('identify', context); //for plugin
             id = context.id;
-            var prevId = id;
-            if (isRelUrl(id)) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
-                var modName = id.slice(2),
-                    rPrevId = context.prevId,
-                    execId = context.execId;
-                if (rPrevId && isRelUrl(rPrevId) && (rPrevId.split('/').length > 1)) {
-                    execId = execId ? execId.replace(rPrevId.slice(2), '') : opts.base
-                }
-                pmod || (pmod = context.pmod);
-                id = dirname(pmod ? pmod.id : execId) + modName;
-            }
-            context.prevId = prevId; //remeber last id
-
+            id = relToAbsId(id, pmod && pmod.id);
             var mod = this.modMap[id];
             if (!mod) {
                 mod = this.modMap[id] = new Mod(id, deps, entry, sync, pmod);
@@ -500,7 +503,7 @@
         }
     }
 
-    sojs.run = function(id, callback) {
+    sojs.use = function(id, callback) {
         var preloadMods = opts.preload;
         if (preloadMods) {
             sojs.require(preloadMods, function() {
@@ -533,5 +536,4 @@
         return sojs.require(id, callback, true)
     }
     require.async = sojs.require.async = async; //exports async method
-
 })(this)

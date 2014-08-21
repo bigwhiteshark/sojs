@@ -142,25 +142,25 @@ module 是一个对象，上面存储了与当前模块相关联的一些属性�
 
 **模块的加载启动**
 
-**sojs.run Function**
+**sojs.use Function**
 
 用来在页面中加载模块。
 
-**sojs.run(id, callback?)**
+**sojs.use(id, callback?)**
 
-通过 run 方法，可以在页面中加载任意模块：
+通过 use 方法，可以在页面中加载任意模块：
 
 // 加载模块 main，并在加载完成时，执行指定回调
 
-	sojs.run('./main', function(main) {
+	sojs.use('./main', function(main) {
 	  main.init();
 	});
 
-run 方法还可以一次加载多个模块：
+use 方法还可以一次加载多个模块：
 
 // // 并发加载模块 a 和模块 b，并在都加载完成时，执行指定回调
 
-	sojs.run(['./a', './b'], function(a, b) {
+	sojs.use(['./a', './b'], function(a, b) {
 	  a.init();
 	  b.init();
 	});

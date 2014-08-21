@@ -4,9 +4,6 @@
 <head>
 	<script type="text/javascript" src="../../src/so.js"></script>
 	<!--<script type="text/javascript" src="../../src/so-cache.js"></script>-->
-	<!--<script type="text/javascript" src="../../src/so-text.js"></script>-->
-	<!--<script type="text/javascript" src="../../src/so-css.js"></script>-->
-	<!--<script type="text/javascript" src="../../src/so-image.js"></script>-->
 </head>
 <body>
 <div id='testcss'>测试so-css.js</div>
@@ -56,7 +53,7 @@
 	//debugger;
 	//var p = require('mods/teacher');
 	//debugger;
-	/*var p = sojs.run('mods/teacher.js',function(){
+	/*var p = sojs.use('mods/teacher.js',function(){
 		require('mods/person.js');
 		//require('mods/teacher.js');
 	});*/
@@ -88,10 +85,10 @@
 	}
 	init();*/
 
-	/*sojs.run('http://sv.so.com/p.js',function(){
+	/*sojs.use('http://sv.so.com/p.js',function(){
 		console.log('ddddd');
 		//debugger;
-		//sojs.run('mods/main');
+		//sojs.use('mods/main');
 		//require('mods/main');
 	});*/
 
@@ -109,16 +106,16 @@
 	/*require.async(['mods/main'],function(){
 		console.log('boot');
 	});*/
-	//sojs.run('mods/main');
-	//sojs.run(['mods/main']);
-	/*sojs.run('mods/main',function(){
+	//sojs.use('mods/main');
+	//sojs.use(['mods/main']);
+	/*sojs.use('mods/main',function(){
 		console.log('boot');
 	});*/
-	/*sojs.run(['mods/main'],function(){
+	/*sojs.use(['mods/main'],function(){
 		console.log('boot');
 	});*/
 
-	sojs.run('mods/main',function(main){
+	sojs.use('mods/main',function(main){
 		console.log(main,'fffffffffffffff');
 	});
 </script>

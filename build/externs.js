@@ -4,7 +4,7 @@ Object.config;
 Object.define;
 Object.require;
 Object.async;
-Object.run;
+Object.use;
 Object.base;
 Object.paths;
 Object.map;

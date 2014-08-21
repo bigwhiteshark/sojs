@@ -78,10 +78,10 @@
     // => http://example.com/js/b.js
 
     // 在任何代码里：
-    sojs.run('./c');
+    sojs.use('./c');
     // => http://example.com/path/to/page/c.js
 
-  `sojs.run(ids, ...)` 和 `define(id, ...)`中的模块标识始终是普通路径，因为这两个方法是在全局环境中执行的。
+  `sojs.use(ids, ...)` 和 `define(id, ...)`中的模块标识始终是普通路径，因为这两个方法是在全局环境中执行的。
 
   ### 文件后缀的提示
 
