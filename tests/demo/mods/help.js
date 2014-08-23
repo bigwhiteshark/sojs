@@ -1,4 +1,4 @@
-define(function(require,exports,module){
+define('mods/help',function(require,exports,module){
 	var help = {
 		mul:function(a,b){
 			return a*b

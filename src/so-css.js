@@ -5,9 +5,8 @@
  * blog:http://bigwhiteshark.github.io/blog/
  */
 (function(global) {
-        var UA = navigator.userAgent,
+    var UA = navigator.userAgent,
         IS_CSS_RE = /\.css(?:\?|$)/i,
-        IS_CSS_TEXT_RE = /^[\.\#]?\w+[^{]+\{[^}]*\}/,
         // `onload` event is supported in WebKit since 535.23
         // Ref:  - https://bugs.webkit.org/show_activity.cgi?id=38995
         isOldWebKit = Number(UA.replace(/.*AppleWebKit\/(\d+)\..*/, '$1')) < 536;

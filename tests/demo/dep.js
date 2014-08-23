@@ -1,4 +1,4 @@
-define('mods/dep',function(require,exports,module){
+define(function(require,exports,module){
 	function Dep(){
 	}
 	var p = Dep.prototype;

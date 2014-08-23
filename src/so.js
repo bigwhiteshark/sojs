@@ -18,6 +18,7 @@
         DEPS_RE = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
         COMMENT_RE = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg,
         PATHS_RE = /^([^/:]+)(\/.+)$/,
+        IS_CSS_TEXT_RE = /^[\.\#]?\w+[^{]+\{[^}]*\}/,
         VARS_RE = /{([^{]+)}/g,
         EMPTY_FN = new Function,
         EMPTY = {},
@@ -79,10 +80,6 @@
 
     function isSync(id) {
         return new RegExp(SYNC_ID).test(id)
-    }
-
-    function isRelUrl(it) {
-        return isString(it) && it.charAt(0) == '.';
     }
 
     function dirname(path) {
@@ -165,10 +162,11 @@
         var elem = assetOnLoad(url, callback);
         var charset = opts.charset;
         elem.charset = charset ? isFunction(charset) ? charset(url) : charset : 'utf-8';
-        elem.id = mod.id;
-        if (elem.nodeName === 'IMG') { //for image plugin
+        if (elem.nodeName !== 'SCRIPT') { //for image plugin
             mod.factory = elem;
-            return;
+            if(elem.nodeName === 'IMG'){
+                return;
+            }
         }
         baseElement ? head.insertBefore(elem, baseElement) : head.appendChild(elem);
     }
@@ -271,20 +269,12 @@
         sojs.loadMod(mod, function() {
             var args = [];
             for (var i = 0, l = mod.deps.length; i < l; i++) {
-                var depMod = sojs.getMod(mod.deps[i]);
+                var depMod = sojs.getMod(mod.deps[i],null,true);
                 args.push(depMod.exports)
             }
             args.push(mod.exports);
             bind(callback, mod, args);
         })
-    }
-
-    function relToAbsId(id,pId){        
-        if (isRelUrl(id) && pId) { //if relative mod , get valid path. for exapmle ./xx/xx/xx
-            var modName = id.slice(2);
-            id = dirname(pId) + modName;
-        }
-        return id;
     }
 
     function EventTarget() {
@@ -300,7 +290,7 @@
         return listener;
     };
 
-    p.once = function(type, listener) {
+    p.one = function(type, listener) {
         var self = this;
         var lnr = this.on(type, function() {
             listener.apply(this, arguments), self.off(type, lnr)
@@ -327,12 +317,12 @@
         }
     };
 
-    function Mod(id, deps, entry, sync, pmod) {
+    function Mod(id, deps, entry, sync, pMod) {
         this.id = id;
         this.sync = sync;
         this.deps = deps || [];
         this.exports = EMPTY;
-        this.pmod = pmod;
+        this.pMod = pMod;
         this.entry = entry
     }
     inherits(Mod, EventTarget);
@@ -355,24 +345,27 @@
     }
 
     p.onExec = function() {
-        var f = this.factory,pId = this.id;
-        var require = function(id,callback){
-            if(isArray(id)){
-                forEach(id,function(v,k){
-                    id[k] = relToAbsId(v,pId)
+        var f = this.factory,
+            uri = this.id;
+        var require = function(id, callback) {
+            if (isArray(id)) {
+                forEach(id, function(v, k) {
+                    id[k] = sojs.resolve(v, uri)
                 })
-            }else{
-                id = relToAbsId(id,pId);
+            } else {
+                id = sojs.resolve(id, uri);
             }
-            return sojs.require(id,callback);
+            return sojs.require(id, callback);
         };
-        var ret = isFunction(f) ? bind(f, global, [require, this.exports = {}, this]) : f;
+        var ret = isFunction(f) ? bind(f, global, [require, this.exports = {},
+            this
+        ]) : f;
         ret && (this.exports = ret);
         this.emit('exec', this);
         delete this.entry;
         delete this.factory;
         delete this.sync;
-        delete this.pmod;
+        delete this.pMod;
         delete this.assetOnLoad;
         return this.exports
     }
@@ -383,27 +376,28 @@
     inherits(ModLoader, EventTarget);
     var p = ModLoader.prototype;
 
-    p.getMod = function(id, deps, entry, sync, pmod) {
+    p.getMod = function(id, deps, entry, sync, pMod) {
         if (id instanceof Mod) {
             return id
         } else {
             context.id = id;
             this.emit('identify', context); //for plugin
             id = context.id;
-            id = relToAbsId(id, pmod && pmod.id);
-            var mod = this.modMap[id];
+            var uri = sojs.resolve(id, pMod && pMod.uri);
+            var mod = this.modMap[uri];
             if (!mod) {
-                mod = this.modMap[id] = new Mod(id, deps, entry, sync, pmod);
-                mod.uri = this.resolve(id);
+                mod = this.modMap[uri] = new Mod(id, deps, entry, sync, pMod);
+                mod.uri = uri;
                 this.emit('resolve', mod);
             }
+            mod.entry || (mod.entry = entry); // mod come from so-cache 
             return mod;
         }
     }
 
-    p.loadMod = function(mod, callback, pmod) {
-        mod = this.getMod(mod, [], pmod && isSync(pmod.id), null, pmod);
-        mod.once('load', callback);
+    p.loadMod = function(mod, callback, pMod) {
+        mod = this.getMod(mod, [], pMod && isSync(pMod.id), null, pMod);
+        mod.one('load', callback);
         var self = this;
         this.loadDefine(mod, function() { //recursive to parse mod dependency
             var deps = mod.deps,
@@ -424,10 +418,10 @@
         if (mod.exports !== EMPTY) { //If the mod is loaded is returned
             return callback()
         }
-        mod.once('define', callback);
+        mod.one('define', callback);
         this.emit('request', mod);
         if (!mod.requested) {
-            if (isSync(mod.id) || mod.sync) { //If it is sync mod, immediately executed factory
+            if (isSync(mod.uri) || mod.sync) { //If it is sync mod, immediately executed factory
                 mod.onDefine(mod.factory, mod.deps)
             } else {
                 request(mod, function() {
@@ -438,7 +432,7 @@
     }
 
     p.getDefine = function(id, deps, factory) {
-        var id = id || getCurrentScript().id,
+        var id = id || getCurrentScript().src,
             mod = this.modMap[id];
         if (mod) { // get deps in define method 
             deps && (mod.deps = mod.deps.concat(deps))
@@ -449,7 +443,7 @@
     }
 
     p.resolve = function(id, refUri) {
-        if (!id) return ""
+        if (!id || IS_CSS_TEXT_RE.test(id)) return id
         id = parseAlias(id);
         id = parsePaths(id);
         id = parseVars(id);

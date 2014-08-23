@@ -59,15 +59,16 @@
     sojs.on('resolve', function(mod) {
         var id = mod.id,
             m, name;
-        if ((m = id.match(/^(\w+)!(.+)$/))) {
+        if ((m = id.match(/^(\w+)!(.+)$/))) { // text!path/to/some.xx
             name = m[1];
-            id = m[2];
-        } else if ((m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/))) {
+            id = m[2];        
+        } else if ((m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/))) { //a.html or b.json or c.tpl?v3
             name = m[1];
         }
-        if(name){
+        if (name) {
             id = id + '#';
-            mod.uri = sojs.resolve(id);
+            var pMod = mod.pMod;
+            mod.uri = sojs.resolve(id,pMod && pMod.uri);
             mod.exec = getPluginExec(name);
         }
     })

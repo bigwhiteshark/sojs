@@ -4,7 +4,9 @@ define(function(require,exports,module){
 	require('./child/dep');
 	//console.log(require.lastId,'ssssssssss');
 	require('./view');
-	require('mods/help')
+	require('mods/help');
+	var dep = require('../../dep');
+
 	function Cla(){
 	}
 	var p = Cla.prototype;

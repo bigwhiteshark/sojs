@@ -30,7 +30,7 @@
 
 <script>
 
-  sojs.run('module-' + n, function (mod) {
+  sojs.use('module-' + n, function (mod) {
     var end = new Date().getTime()
 
     printResults('execution time: ' + (end - start) + 'ms')

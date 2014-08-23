@@ -75,12 +75,12 @@
     cache.clear(true); //delete expired item
 
     sojs.on('resolve', function(mod) {
-        var id = mod.id,
+        var id = mod.uri,
             m, name,
             key = storagePrefix + id;
         if (id.indexOf('sync') == -1) {
             if (!cache.get(key)) {
-                mod.once('exec', function() {
+                mod.one('exec', function() {
                     var f = mod.factory;
                     f = typeof(f) === 'function' ? f + '' : f;
                     var storeData = {
@@ -94,7 +94,7 @@
     })
 
     sojs.on("request", function(mod) {
-        var id = mod.id,
+        var id = mod.uri,
             key = storagePrefix + id,
             storeData = cache.get(key);
         if (storeData) {
