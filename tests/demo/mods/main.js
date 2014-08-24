@@ -2,12 +2,12 @@ define(function(require, exports, module) {
   console.log('main mods');
   require('http://sv.so.com/p.js');
   require('http://sv.so.com/l.js');
-  var img = require("http://p2.qhimg.com/t01dd5e839f1597aae2.png", function(arg) {
+  /*var img = require("http://p2.qhimg.com/t01dd5e839f1597aae2.png", function(arg) {
     console.log(arg);
     //document.body.appendChild(arg);
   });
   var img = require("http://p2.qhimg.com/t01dd5e839f1597aae2.png");
-  document.body.appendChild(img);
+  document.body.appendChild(img);*/
 
   require('lib/underscore');
   console.log(_);
@@ -64,7 +64,7 @@ define(function(require, exports, module) {
           console.log('load css style')
       });*/
 
-  var testcss = require('mods/style.css');
+  //var testcss = require('mods/style.css');
      /* var teststyle = require("#testcssText{color:blue;font-size:20px;width:200px;height: 30px;  border: 1px solid red;}");*/
 
   return {

@@ -3,7 +3,6 @@
 <meta charset='utf-8'>
 <head>
 	<script type="text/javascript" src="../../src/so.js"></script>
-	<!--<script type="text/javascript" src="../../src/so-cache.js"></script>-->
 </head>
 <body>
 <div id='testcss'>测试so-css.js</div>
@@ -12,6 +11,7 @@
 	sojs.config({
 		base:'.',
 		map:[['http://sv.so.com/p.js','mods/p.js']],
+		cacheVersion:3,
 		mode:'cmd'/*,
 		preload:['http://sv.so.com/p.js','http://sv.so.com/l.js']*/
 	});

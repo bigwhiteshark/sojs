@@ -164,7 +164,7 @@
         elem.charset = charset ? isFunction(charset) ? charset(url) : charset : 'utf-8';
         if (elem.nodeName !== 'SCRIPT') { //for image plugin
             mod.factory = elem;
-            if(elem.nodeName === 'IMG'){
+            if (elem.nodeName === 'IMG') {
                 return;
             }
         }
@@ -269,7 +269,7 @@
         sojs.loadMod(mod, function() {
             var args = [];
             for (var i = 0, l = mod.deps.length; i < l; i++) {
-                var depMod = sojs.getMod(mod.deps[i],null,true);
+                var depMod = sojs.getMod(mod.deps[i], null, true);
                 args.push(depMod.exports)
             }
             args.push(mod.exports);
@@ -471,7 +471,8 @@
                 }
                 opts[key] = curr;
             }
-        })
+        });
+        sojs.emit("config", opts);
     }
 
     var sojs = global.sojs = new ModLoader(),
