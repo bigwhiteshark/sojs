@@ -27,8 +27,7 @@
         doc = document,
         unique_num = 0,
         head = doc.head || getTags("head")[0] || doc.documentElement,
-        baseElement = getTags('base', head)[0],
-        context = {};
+        baseElement = getTags('base', head)[0];
 
     function guid() {
         return unique_num++;
@@ -380,9 +379,9 @@
         if (id instanceof Mod) {
             return id
         } else {
-            context.id = id;
-            this.emit('identify', context); //for plugin
-            id = context.id;
+            opts.id = id;
+            this.emit('identify', opts); //for plugin
+            id = opts.id;
             var uri = sojs.resolve(id, pMod && pMod.uri);
             var mod = this.modMap[uri];
             if (!mod) {

@@ -81,8 +81,8 @@
     }
 
     var cssTexts = {};
-    sojs.on('identify', function(ctx) {
-        var id = ctx.id;
+    sojs.on('identify', function(opts) {
+        var id = opts.id;
         if (IS_CSS_TEXT_RE.test(id)) {
             var cssText = id,
                 id = SYNC_ID + guid() + '.css';
@@ -93,7 +93,7 @@
                 }
             });
             cssTexts[id] = cssText;
-            ctx.id = id;
+            opts.id = id;
         }
     })
 
