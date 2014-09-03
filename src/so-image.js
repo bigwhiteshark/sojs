@@ -23,7 +23,7 @@
         if (name && IS_IMG_RE.test(name)) {
             id = id + '#';
             var pMod = mod.pMod;
-            mod.uri = sojs.resolve(id,pMod && pMod.uri);
+            mod.uri = sojs.resolve(id, pMod && pMod.uri);
             mod.assetOnLoad = imageOnload;
         }
     })

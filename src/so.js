@@ -21,7 +21,6 @@
         IS_CSS_TEXT_RE = /^[\.\#]?\w+[^{]+\{[^}]*\}/,
         VARS_RE = /{([^{]+)}/g,
         EMPTY_FN = new Function,
-        EMPTY = {},
         SYNC_ID = '__sync__',
         JS_EXT = '.js',
         doc = document,
@@ -43,6 +42,13 @@
                 return false
         }
     }
+
+    function isEmpty(obj) {
+        for (var k in obj) {
+            return false;
+        }
+        return true;
+    };
 
     function stripComments(code) {
         return code.replace(COMMENT_RE, '');
@@ -92,7 +98,7 @@
         if (lastC === "#") {
             return path.substring(0, last)
         }
-        return (/\w+\.js|\/$/.test(path) || path.indexOf("?") > 0) ? path : path + JS_EXT
+        return (/\w+\.\w+|\/$/.test(path) || path.indexOf("?") > 0) ? path : path + JS_EXT
     }
 
     function canonicalUri(path, refUri) { //format url
@@ -131,13 +137,10 @@
             elem.onload = elem.onerror = elem.onreadystatechange = null;
             !keep && head.removeChild(elem);
             elem = null;
-            callback()
+            callback();
         }
         if ('onload' in elem) {
             elem.onload = elem.onerror = onload;
-            elem.onerror = function() {
-                onload()
-            }
         } else {
             elem.onreadystatechange = function() {
                 if (/loaded|complete/.test(elem.readyState)) {
@@ -208,7 +211,7 @@
 
     function isType(type) {
         return function(obj) {
-            return EMPTY.toString.call(obj) == '[object ' + type + ']'
+            return {}.toString.call(obj) == '[object ' + type + ']'
         }
     }
     var isString = isType('String'),
@@ -268,7 +271,7 @@
         sojs.loadMod(mod, function() {
             var args = [];
             for (var i = 0, l = mod.deps.length; i < l; i++) {
-                var depMod = sojs.getMod(mod.deps[i], null, true);
+                var depMod = sojs.getMod(mod.deps[i], null, false);
                 args.push(depMod.exports)
             }
             args.push(mod.exports);
@@ -316,12 +319,12 @@
         }
     };
 
-    function Mod(id, deps, entry, sync, pMod) {
+    function Mod(id, deps, entry, sync, parent) {
         this.id = id;
         this.sync = sync;
         this.deps = deps || [];
-        this.exports = EMPTY;
-        this.pMod = pMod;
+        this.exports = {};
+        this.parent = parent;
         this.entry = entry
     }
     inherits(Mod, EventTarget);
@@ -344,17 +347,26 @@
     }
 
     p.onExec = function() {
+        if (!isEmpty(this.exports)) {
+            return this.exports;
+        }
         var f = this.factory,
-            uri = this.id;
-        var require = function(id, callback) {
+            uri = this.uri;
+        var resolve = function(id, refUri) {
             if (isArray(id)) {
                 forEach(id, function(v, k) {
-                    id[k] = sojs.resolve(v, uri)
+                    id[k] = sojs.resolve(v, refUri)
                 })
             } else {
-                id = sojs.resolve(id, uri);
+                id = sojs.resolve(id, refUri);
             }
-            return sojs.require(id, callback);
+            return id;
+        }
+        var require = function(id, callback) {
+            return sojs.require(resolve(id, uri), callback);
+        };
+        require.async = function(id,callback){
+            async(resolve(id, uri),callback)
         };
         var ret = isFunction(f) ? bind(f, global, [require, this.exports = {},
             this
@@ -364,7 +376,7 @@
         delete this.entry;
         delete this.factory;
         delete this.sync;
-        delete this.pMod;
+        delete this.parent;
         delete this.assetOnLoad;
         return this.exports
     }
@@ -375,17 +387,17 @@
     inherits(ModLoader, EventTarget);
     var p = ModLoader.prototype;
 
-    p.getMod = function(id, deps, entry, sync, pMod) {
+    p.getMod = function(id, deps, entry, sync, parent) {
         if (id instanceof Mod) {
             return id
         } else {
             opts.id = id;
             this.emit('identify', opts); //for plugin
             id = opts.id;
-            var uri = sojs.resolve(id, pMod && pMod.uri);
+            var uri = sojs.resolve(id, parent && parent.uri);
             var mod = this.modMap[uri];
             if (!mod) {
-                mod = this.modMap[uri] = new Mod(id, deps, entry, sync, pMod);
+                mod = this.modMap[uri] = new Mod(id, deps, entry, sync, parent);
                 mod.uri = uri;
                 this.emit('resolve', mod);
             }
@@ -394,8 +406,8 @@
         }
     }
 
-    p.loadMod = function(mod, callback, pMod) {
-        mod = this.getMod(mod, [], pMod && isSync(pMod.id), null, pMod);
+    p.loadMod = function(mod, callback, parent) {
+        mod = this.getMod(mod, [], parent && isSync(parent.id), null, parent);
         mod.one('load', callback);
         var self = this;
         this.loadDefine(mod, function() { //recursive to parse mod dependency
@@ -414,35 +426,39 @@
     }
 
     p.loadDefine = function(mod, callback) {
-        if (mod.exports !== EMPTY) { //If the mod is loaded is returned
-            return callback()
+        if (!isEmpty(mod.exports)) { //If the mod is loaded is returned
+            mod.onDefine(mod.factory, mod.deps);
+            return callback();
         }
         mod.one('define', callback);
-        this.emit('request', mod);
+        mod.requested || this.emit('request', mod);
         if (!mod.requested) {
             if (isSync(mod.uri) || mod.sync) { //If it is sync mod, immediately executed factory
                 mod.onDefine(mod.factory, mod.deps)
             } else {
                 request(mod, function() {
-                    mod.onDefine(mod.factory, mod.deps)
+                    mod.onDefine(mod.factory, mod.deps);
                 });
             }
         }
     }
 
     p.getDefine = function(id, deps, factory) {
-        var id = id || getCurrentScript().src,
+        var currentScript = getCurrentScript();
+        var id = id || currentScript.src,
             mod = this.modMap[id];
         if (mod) { // get deps in define method 
             deps && (mod.deps = mod.deps.concat(deps))
         } else {
-            mod = this.getMod(id, [], null, true)
+            mod = this.getMod(id, [], null, true);
+            mod.noScript = currentScript;
         }
-        mod.factory = factory;
+        mod.onDefine(factory,deps);
+        //mod.factory = factory; //todo optimize
     }
 
     p.resolve = function(id, refUri) {
-        if (!id || IS_CSS_TEXT_RE.test(id)) return id
+        if (!id || IS_CSS_TEXT_RE.test(id)) return id;
         id = parseAlias(id);
         id = parsePaths(id);
         id = parseVars(id);
@@ -475,7 +491,7 @@
     }
 
     var sojs = global.sojs = new ModLoader(),
-        opts = EMPTY,
+        opts = {},
         cwd = dirname(location.href),
         m = cwd.match(DOMAIN_RE);
     opts.dir = opts.base = (dirname(getCurrentScript().src) || cwd),
@@ -492,7 +508,7 @@
             if (entry && !mod.sync) {
                 sojs.loadMod(mod, EMPTY_FN)
             } else {
-                return mod.exports !== EMPTY ? mod.exports : mod.onExec()
+                return isEmpty(mod.exports) && !mod.noScript ? mod.onExec() : mod.exports;
             }
         }
     }

@@ -6,11 +6,11 @@
  */
 (function(global) {
     var plugins = {
-        '.tpl,.html,text': function(content) {
-            return jsEscape(content)
+        '.tpl,.html,text': function(uri, content) {
+            globalEval('define("' + uri + '#", "' + jsEscape(content) + '")')
         },
-        '.json': function(content) {
-            return content
+        '.json': function(uri, content) {
+            globalEval('define("' + uri + '#", ' + content + ')')
         }
     }
 
@@ -31,17 +31,6 @@
         return r.send(null)
     }
 
-    function jsEscape(content) {
-        return content.replace(/(["\\])/g, "\\$1")
-            .replace(/[\f]/g, "\\f")
-            .replace(/[\b]/g, "\\b")
-            .replace(/[\n]/g, "\\n")
-            .replace(/[\t]/g, "\\t")
-            .replace(/[\r]/g, "\\r")
-            .replace(/[\u2028]/g, "\\u2028")
-            .replace(/[\u2029]/g, "\\u2029")
-    }
-
     function getPluginExec(name) {
         var exec;
         if (name) {
@@ -56,19 +45,38 @@
         return exec
     }
 
+    function globalEval(content) {
+        if (content && /\S/.test(content)) {
+            (global.execScript || function(content) {
+                (global.eval || eval).call(global, content)
+            })(content)
+        }
+    }
+
+    function jsEscape(content) {
+        return content.replace(/(["\\])/g, "\\$1")
+            .replace(/[\f]/g, "\\f")
+            .replace(/[\b]/g, "\\b")
+            .replace(/[\n]/g, "\\n")
+            .replace(/[\t]/g, "\\t")
+            .replace(/[\r]/g, "\\r")
+            .replace(/[\u2028]/g, "\\u2028")
+            .replace(/[\u2029]/g, "\\u2029")
+    }
+
     sojs.on('resolve', function(mod) {
         var id = mod.id,
             m, name;
         if ((m = id.match(/^(\w+)!(.+)$/))) { // text!path/to/some.xx
             name = m[1];
-            id = m[2];        
+            id = m[2];
         } else if ((m = id.match(/[^?]+(\.\w+)(?:\?|#|$)/))) { //a.html or b.json or c.tpl?v3
             name = m[1];
         }
         if (name) {
             id = id + '#';
-            var pMod = mod.pMod;
-            mod.uri = sojs.resolve(id,pMod && pMod.uri);
+            var parent = mod.parent;
+            mod.uri = sojs.resolve(id, parent && parent.uri);
             mod.exec = getPluginExec(name);
         }
     })
@@ -77,9 +85,12 @@
         var exec = mod.exec;
         if (exec) {
             mod.requested = true;
+            console.log(mod.uri);
             xhr(mod.uri, function(content) {
-                var factory = exec(content);
-                mod.onDefine(factory)
+                var parent = mod.parent;
+                var uri = sojs.resolve(mod.id, parent && parent.uri)
+                exec(uri, content);
+                mod.onDefine(mod.factory);
             })
         }
     })
